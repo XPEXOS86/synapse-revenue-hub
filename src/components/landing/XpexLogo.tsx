@@ -1,0 +1,12 @@
+const XpexLogo = ({ className = "w-6 h-6" }: { className?: string }) => (
+  <svg viewBox="0 0 32 32" fill="none" className={className} xmlns="http://www.w3.org/2000/svg">
+    <rect width="32" height="32" rx="6" fill="hsl(var(--primary))" />
+    <path
+      d="M8 10L13.5 16L8 22H11.5L15.5 17.2L19.5 22H23L17.5 16L23 10H19.5L15.5 14.8L11.5 10H8Z"
+      fill="hsl(var(--primary-foreground))"
+    />
+    <rect x="6" y="24" width="20" height="2" rx="1" fill="hsl(var(--primary-foreground))" opacity="0.5" />
+  </svg>
+);
+
+export default XpexLogo;
