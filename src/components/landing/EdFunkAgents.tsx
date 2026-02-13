@@ -1,48 +1,36 @@
 import { motion } from "framer-motion";
-import { CreditCard, Eye, Megaphone, Link2, RefreshCw, Sparkles } from "lucide-react";
+import { CreditCard, Eye, Link2, Key, Bell, BarChart3 } from "lucide-react";
 
-const edFunkAgents = [
+const agents = [
   {
     name: "Billing Agent",
-    role: "Gerencia planos, pay-per-use, upgrades e suspensões",
-    integrations: ["Stripe", "ClickBank", "Hotmart"],
+    role: "Gerencia planos, upgrades, suspensões e pagamentos via Stripe",
     icon: CreditCard,
-    status: "active",
   },
   {
     name: "Monitor Agent",
-    role: "Monitora performance, alertas, falhas e logs em tempo real",
-    integrations: [],
+    role: "Monitora performance da API, alertas de falhas e logs em tempo real",
     icon: Eye,
-    status: "active",
-  },
-  {
-    name: "Marketing Agent",
-    role: "Integração e automação de campanhas de ads",
-    integrations: ["Meta Ads", "Google Ads", "LinkedIn Ads", "HubSpot"],
-    icon: Megaphone,
-    status: "active",
   },
   {
     name: "Integration Agent",
-    role: "Conecta SaaS externos, Zapier e webhooks",
-    integrations: ["Zapier", "Webhook Listener", "CRM APIs"],
+    role: "Conecta com Zapier, HubSpot, CRM e webhooks customizados",
     icon: Link2,
-    status: "active",
   },
   {
-    name: "Brain Sync Agent",
-    role: "Mantém Brains atualizados e replicáveis entre tenants",
-    integrations: [],
-    icon: RefreshCw,
-    status: "active",
+    name: "API Key Manager",
+    role: "Gera, valida e rotaciona API keys com hashing SHA-256",
+    icon: Key,
   },
   {
-    name: "Automation Agent",
-    role: "Otimiza fluxo interno, cross-sell e upsell automático",
-    integrations: [],
-    icon: Sparkles,
-    status: "active",
+    name: "Notification Agent",
+    role: "Envia alertas de uso, limites atingidos e relatórios automáticos",
+    icon: Bell,
+  },
+  {
+    name: "Usage Logger Agent",
+    role: "Registra todas as chamadas, response times e status codes",
+    icon: BarChart3,
   },
 ];
 
@@ -67,10 +55,10 @@ const EdFunkAgents = () => {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            <span className="text-gradient-accent">EdFunk</span> Agents
+            <span className="text-gradient-accent">6 Agents</span> autônomos
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            6 agentes autônomos que operam 24/7 — billing, monitoramento, marketing, integrações, sincronização e automação.
+            Agentes inteligentes que operam 24/7 — billing, monitoramento, integrações, API keys, notificações e logging.
           </p>
         </motion.div>
 
@@ -81,7 +69,7 @@ const EdFunkAgents = () => {
           viewport={{ once: true }}
           className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto"
         >
-          {edFunkAgents.map((agent) => (
+          {agents.map((agent) => (
             <motion.div
               key={agent.name}
               variants={item}
@@ -97,16 +85,7 @@ const EdFunkAgents = () => {
                 </span>
               </div>
               <h3 className="font-semibold text-base mb-2">{agent.name}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed mb-4">{agent.role}</p>
-              {agent.integrations.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {agent.integrations.map((int) => (
-                    <span key={int} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                      {int}
-                    </span>
-                  ))}
-                </div>
-              )}
+              <p className="text-sm text-muted-foreground leading-relaxed">{agent.role}</p>
             </motion.div>
           ))}
         </motion.div>

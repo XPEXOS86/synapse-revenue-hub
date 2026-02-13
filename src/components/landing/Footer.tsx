@@ -1,15 +1,15 @@
-import { Brain } from "lucide-react";
+import { Mail } from "lucide-react";
 
 const Footer = () => {
   return (
     <footer className="border-t border-border/30 py-12">
       <div className="container px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Brain className="h-4 w-4 text-primary" />
-          <span className="text-sm font-display font-medium">XPEX AI Revenue Link</span>
+          <Mail className="h-4 w-4 text-primary" />
+          <span className="text-sm font-display font-medium">Gold Email Validator</span>
         </div>
         <p className="text-xs text-muted-foreground">
-          © 2026 XPEX AI. Todos os direitos reservados.
+          © 2026 Gold Email Validator. Todos os direitos reservados.
         </p>
       </div>
     </footer>

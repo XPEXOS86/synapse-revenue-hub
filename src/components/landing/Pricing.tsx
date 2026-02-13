@@ -1,50 +1,56 @@
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const plans = [
   {
     name: "Starter",
-    price: "R$497",
+    price: "$19",
     period: "/mês",
-    description: "Para validação de produto e primeiros clientes.",
+    limit: "500 validações/mês",
+    description: "Para começar a validar e testar integrações.",
     features: [
-      "3 agentes ativos",
-      "5.000 API calls/mês",
-      "Dashboard básico",
-      "Suporte por email",
-      "1 integração",
+      "500 validações/mês",
+      "Validação básica de emails",
+      "Relatórios semanais",
+      "API Key para integração",
+      "Dashboard simplificado",
     ],
     highlighted: false,
   },
   {
-    name: "Growth",
-    price: "R$1.997",
+    name: "Pro",
+    price: "$49",
     period: "/mês",
-    description: "Para escalar rápido com automação completa.",
+    limit: "5.000 validações/mês",
+    description: "Para times que precisam de volume e insights.",
     features: [
-      "Agentes ilimitados",
-      "50.000 API calls/mês",
-      "Dashboard avançado",
+      "5.000 validações/mês",
+      "Validação avançada de emails",
+      "Enriquecimento de dados",
+      "Relatórios detalhados",
+      "API Key completa",
+      "Dashboard completo",
       "Suporte prioritário",
-      "Todas as integrações",
-      "Marketplace acesso",
-      "Analytics completo",
     ],
     highlighted: true,
   },
   {
     name: "Enterprise",
-    price: "R$8.000+",
+    price: "$149",
     period: "/mês",
+    limit: "Validações ilimitadas",
     description: "Para operações de alto volume e custom.",
     features: [
-      "Tudo do Growth",
-      "API calls ilimitadas",
-      "SLA dedicado",
-      "Custom agents",
-      "White-label",
-      "Onboarding 1:1",
+      "Validações ilimitadas",
+      "Validação premium de emails",
+      "Enriquecimento e deduplicação avançada",
+      "Integração completa com CRM",
+      "API Key ilimitada",
+      "Dashboard customizável",
+      "Suporte dedicado 24/7",
+      "Onboarding e treinamento",
     ],
     highlighted: false,
   },
@@ -52,7 +58,7 @@ const plans = [
 
 const Pricing = () => {
   return (
-    <section className="py-24 relative">
+    <section id="pricing" className="py-24 relative">
       <div className="container px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -64,7 +70,7 @@ const Pricing = () => {
             Pricing <span className="text-gradient-accent">transparente</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Comece pequeno e escale conforme sua receita cresce.
+            Comece com $19/mês e escale conforme sua necessidade.
           </p>
         </motion.div>
 
@@ -101,12 +107,14 @@ const Pricing = () => {
                   </li>
                 ))}
               </ul>
-              <Button
-                className="w-full"
-                variant={plan.highlighted ? "default" : "outline"}
-              >
-                Escolher plano
-              </Button>
+              <Link to="/auth">
+                <Button
+                  className="w-full"
+                  variant={plan.highlighted ? "default" : "outline"}
+                >
+                  Escolher {plan.name}
+                </Button>
+              </Link>
             </motion.div>
           ))}
         </div>

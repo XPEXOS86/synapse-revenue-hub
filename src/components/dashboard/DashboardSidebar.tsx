@@ -5,7 +5,7 @@ import {
   Key,
   Activity,
   Settings,
-  Brain,
+  Mail,
   LogOut,
   BookOpen,
 } from "lucide-react";
@@ -41,9 +41,9 @@ export function DashboardSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="p-4">
         <NavLink to="/dashboard" className="flex items-center gap-2">
-          <Brain className="h-6 w-6 text-primary shrink-0" />
+          <Mail className="h-6 w-6 text-primary shrink-0" />
           <span className="font-display font-bold text-base group-data-[collapsible=icon]:hidden">
-            XPEX AI
+            Gold Email
           </span>
         </NavLink>
       </SidebarHeader>

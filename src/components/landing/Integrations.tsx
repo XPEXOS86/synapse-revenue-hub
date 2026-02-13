@@ -1,18 +1,15 @@
 import { motion } from "framer-motion";
-import { Zap, Users, BarChart, Globe, Link, Briefcase, Linkedin } from "lucide-react";
+import { Zap, Users, BarChart, Globe, Link, Briefcase } from "lucide-react";
 
 const integrations = [
   { name: "Stripe", icon: CreditCardIcon },
-  { name: "ClickBank", icon: Globe },
-  { name: "Hotmart", icon: Briefcase },
   { name: "Zapier", icon: Zap },
   { name: "HubSpot", icon: Users },
+  { name: "ClickBank", icon: Globe },
   { name: "Meta Ads", icon: BarChart },
   { name: "Google Ads", icon: BarChart },
-  { name: "LinkedIn Ads", icon: Linkedin },
   { name: "Webhooks", icon: Link },
   { name: "CRM APIs", icon: Users },
-  { name: "OAuth", icon: Users },
 ];
 
 function CreditCardIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -38,7 +35,7 @@ const Integrations = () => {
             Conecte com <span className="text-gradient-primary">tudo</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            12+ integrações prontas para billing, CRM, ads e automação.
+            Integrações prontas para billing, CRM, ads e automação.
           </p>
         </motion.div>
 
