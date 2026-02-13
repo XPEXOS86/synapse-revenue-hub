@@ -16,6 +16,7 @@ import DashboardKeys from "./pages/dashboard/DashboardKeys";
 import DashboardAgents from "./pages/dashboard/DashboardAgents";
 import NotFound from "./pages/NotFound";
 import ApiDocs from "./pages/ApiDocs";
+import EnterpriseSales from "./pages/EnterpriseSales";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +32,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/brain/:brainId" element={<BrainDetail />} />
             <Route path="/docs" element={<ApiDocs />} />
+            <Route path="/enterprise" element={<EnterpriseSales />} />
             <Route
               path="/dashboard"
               element={
