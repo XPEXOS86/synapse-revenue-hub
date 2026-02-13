@@ -28,9 +28,11 @@ const CTA = () => {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="h-12 px-8 font-semibold">
-                Request Enterprise Demo
-              </Button>
+              <Link to="/enterprise">
+                <Button size="lg" variant="outline" className="h-12 px-8 font-semibold">
+                  Request Enterprise Demo
+                </Button>
+              </Link>
             </div>
           </div>
         </motion.div>

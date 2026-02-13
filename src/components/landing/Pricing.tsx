@@ -103,7 +103,7 @@ const Pricing = () => {
                   </li>
                 ))}
               </ul>
-              <Link to="/auth">
+              <Link to={plan.name === "Enterprise" ? "/enterprise" : "/auth"}>
                 <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
                   {plan.name === "Enterprise" ? "Contact Sales" : `Get ${plan.name}`}
                 </Button>

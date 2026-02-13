@@ -38,10 +38,12 @@ const Hero = () => {
                   View API Documentation
                 </Button>
               </Link>
-              <Button size="lg" variant="ghost" className="h-12 px-7 font-semibold gap-2 text-muted-foreground">
-                <Building2 className="h-4 w-4" />
-                Talk to Enterprise Sales
-              </Button>
+              <Link to="/enterprise">
+                <Button size="lg" variant="ghost" className="h-12 px-7 font-semibold gap-2 text-muted-foreground">
+                  <Building2 className="h-4 w-4" />
+                  Talk to Enterprise Sales
+                </Button>
+              </Link>
             </div>
           </motion.div>
 
