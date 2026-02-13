@@ -7,8 +7,8 @@ const Navbar = () => {
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="container px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Gold Email Validator" className="h-7 w-7 rounded" />
-          <span className="font-display font-bold text-lg">Gold Email Validator</span>
+          <img src={logo} alt="Gold Mail Validator" className="h-7 w-7 rounded" />
+          <span className="font-display font-bold text-lg">Gold Mail Validator</span>
         </Link>
         <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
           <a href="/#features" className="hover:text-foreground transition-colors">Recursos</a>

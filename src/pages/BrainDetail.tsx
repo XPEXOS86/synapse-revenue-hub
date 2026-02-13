@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft, Check, Zap, Users, BarChart, Globe, Link as LinkIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,22 +16,7 @@ const integrationIcons: Record<string, React.ElementType> = {
 };
 
 const BrainDetail = () => {
-  const { brainId } = useParams();
-  const brain = brains.find((b) => b.id === brainId);
-
-  if (!brain) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Brain não encontrado</h1>
-          <Link to="/">
-            <Button variant="outline">Voltar ao início</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
+  const brain = brains[0]; // Only email-validation exists now
   const Icon = brain.icon;
 
   return (
@@ -44,7 +29,7 @@ const BrainDetail = () => {
         <div className="container px-6 relative z-10">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors mb-8">
             <ArrowLeft className="h-4 w-4" />
-            Voltar ao portfólio
+            Voltar
           </Link>
 
           <motion.div
@@ -60,12 +45,16 @@ const BrainDetail = () => {
               {brain.description}
             </p>
             <div className="flex gap-4">
-              <Button size="lg" className="shadow-glow font-semibold">
-                Começar agora
-              </Button>
-              <Button size="lg" variant="outline" className="font-semibold">
-                Ver demo
-              </Button>
+              <Link to="/auth">
+                <Button size="lg" className="shadow-glow font-semibold">
+                  Começar agora
+                </Button>
+              </Link>
+              <Link to="/docs">
+                <Button size="lg" variant="outline" className="font-semibold">
+                  API Docs
+                </Button>
+              </Link>
             </div>
           </motion.div>
         </div>
@@ -147,9 +136,11 @@ const BrainDetail = () => {
                     </li>
                   ))}
                 </ul>
-                <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
-                  Escolher {plan.name}
-                </Button>
+                <Link to="/auth">
+                  <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
+                    Escolher {plan.name}
+                  </Button>
+                </Link>
               </motion.div>
             ))}
           </div>
