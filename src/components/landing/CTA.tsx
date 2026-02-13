@@ -20,10 +20,10 @@ const CTA = () => {
               <Zap className="h-8 w-8 text-accent animate-float" style={{ animationDelay: "1s" }} />
             </div>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Pronto para o <span className="text-gradient-primary">Gayson</span>?
+              Pronto para o <span className="text-gradient-primary">XPEX AI</span>?
             </h2>
             <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-              5 Brains, 6 EdFunk Agents, billing integrado e API gateway — tudo pronto para escalar seu negócio.
+              5 Brains de IA, 6 Agents autônomos, billing integrado e API gateway — infraestrutura SaaS B2B pronta para escalar.
             </p>
             <Link to="/dashboard">
               <Button size="lg" className="h-13 px-8 text-base font-semibold shadow-glow">
