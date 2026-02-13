@@ -67,7 +67,7 @@ const Testimonials = () => {
             Quem usa, <span className="text-gradient-primary">recomenda</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Empresas de todos os tamanhos confiam no Gold Email Validator para proteger sua reputação e otimizar campanhas.
+            Empresas de todos os tamanhos confiam no Gold Mail Validator para proteger sua reputação e otimizar campanhas.
           </p>
         </motion.div>
 

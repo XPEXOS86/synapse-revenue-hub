@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
@@ -27,7 +26,6 @@ const DashboardKeys = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [newKeyName, setNewKeyName] = useState("");
-  const [newKeyBrain, setNewKeyBrain] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set());
   const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
@@ -45,7 +43,6 @@ const DashboardKeys = () => {
   }, []);
 
   useEffect(() => {
-    // Ensure tenant exists, then fetch keys
     const init = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -63,7 +60,7 @@ const DashboardKeys = () => {
     setCreating(true);
 
     const { data, error } = await supabase.functions.invoke("manage-keys", {
-      body: { action: "create-api-key", name: newKeyName, brain: newKeyBrain },
+      body: { action: "create-api-key", name: newKeyName, brain: "email-validation" },
     });
 
     setCreating(false);
@@ -77,7 +74,6 @@ const DashboardKeys = () => {
     setNewlyCreatedKey(createdKey.raw_key);
     setKeys((prev) => [createdKey, ...prev]);
     setNewKeyName("");
-    setNewKeyBrain("all");
     setDialogOpen(false);
     toast({ title: "API Key criada!", description: "Copie a chave agora — ela não será exibida novamente." });
   };
@@ -128,7 +124,7 @@ const DashboardKeys = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold mb-1">API Keys</h1>
-          <p className="text-sm text-muted-foreground">Gerencie suas chaves de acesso à API.</p>
+          <p className="text-sm text-muted-foreground">Gerencie suas chaves de acesso à API de validação de emails.</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -146,20 +142,7 @@ const DashboardKeys = () => {
                 <Label>Nome</Label>
                 <Input placeholder="Ex: Production Key" value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)} />
               </div>
-              <div className="space-y-2">
-                <Label>Brain</Label>
-                <Select value={newKeyBrain} onValueChange={setNewKeyBrain}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Brains</SelectItem>
-                    <SelectItem value="email-validation">Email Validation</SelectItem>
-                    <SelectItem value="data-enrichment">Data Enrichment</SelectItem>
-                    <SelectItem value="revenue-intelligence">Revenue Intelligence</SelectItem>
-                    <SelectItem value="ad-optimization">Ad Optimization</SelectItem>
-                    <SelectItem value="workflow-automation">Workflow Automation</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              <p className="text-xs text-muted-foreground">A key será criada para o endpoint Email Validation.</p>
               <Button onClick={createKey} disabled={creating || !newKeyName.trim()} className="w-full">
                 {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar Key"}
               </Button>
@@ -210,7 +193,7 @@ const DashboardKeys = () => {
                     Criada em {formatDate(k.created_at)} · Último uso: {timeAgo(k.last_used_at)}
                   </p>
                 </div>
-                <Badge variant="outline" className="text-xs">{k.brain === "all" ? "All Brains" : k.brain}</Badge>
+                <Badge variant="outline" className="text-xs">Email Validation</Badge>
               </div>
               <div className="flex items-center gap-2">
                 <code className="flex-1 text-xs bg-muted/50 rounded-md px-3 py-2 font-mono">

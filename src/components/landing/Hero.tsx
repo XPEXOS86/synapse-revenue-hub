@@ -92,7 +92,7 @@ const Hero = () => {
             className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 mb-8 text-sm text-muted-foreground"
           >
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse-glow" />
-            Gold Email Validator · Validação inteligente em tempo real
+            Gold Mail Validator · Validação inteligente em tempo real
           </motion.div>
 
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-4">
