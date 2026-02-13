@@ -1,14 +1,17 @@
 import { motion } from "framer-motion";
-import { Zap, Users, BarChart, Globe, Link } from "lucide-react";
+import { Zap, Users, BarChart, Globe, Link, Briefcase, Linkedin } from "lucide-react";
 
 const integrations = [
   { name: "Stripe", icon: CreditCardIcon },
   { name: "ClickBank", icon: Globe },
+  { name: "Hotmart", icon: Briefcase },
   { name: "Zapier", icon: Zap },
   { name: "HubSpot", icon: Users },
   { name: "Meta Ads", icon: BarChart },
   { name: "Google Ads", icon: BarChart },
+  { name: "LinkedIn Ads", icon: Linkedin },
   { name: "Webhooks", icon: Link },
+  { name: "CRM APIs", icon: Users },
   { name: "OAuth", icon: Users },
 ];
 
@@ -35,18 +38,18 @@ const Integrations = () => {
             Conecte com <span className="text-gradient-primary">tudo</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            9+ integrações prontas para billing, CRM, ads e automação.
+            12+ integrações prontas para billing, CRM, ads e automação.
           </p>
         </motion.div>
 
-        <div className="flex flex-wrap justify-center gap-4 max-w-3xl mx-auto">
+        <div className="flex flex-wrap justify-center gap-4 max-w-4xl mx-auto">
           {integrations.map((int, i) => (
             <motion.div
               key={int.name}
               initial={{ opacity: 0, scale: 0.8 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.05 }}
+              transition={{ delay: i * 0.04 }}
               className="glass rounded-xl px-5 py-3 flex items-center gap-3 hover:border-primary/30 transition-colors"
             >
               <int.icon className="h-4 w-4 text-primary" />
