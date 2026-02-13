@@ -26,18 +26,18 @@ const Hero = () => {
             className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 mb-8 text-sm text-muted-foreground"
           >
             <span className="h-2 w-2 rounded-full bg-primary animate-pulse-glow" />
-            Gayson Full Edition · 5 Brains · 6 EdFunk Agents · Multi-nicho
+            XPEX AI · Revenue Link Brain · SaaS Infrastructure
           </motion.div>
 
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
-            <span className="text-gradient-primary">Gayson</span>
+            <span className="text-gradient-primary">XPEX AI</span>
             <br />
-            <span className="text-3xl sm:text-4xl lg:text-5xl text-muted-foreground font-medium">SaaS + API de última geração</span>
+            <span className="text-3xl sm:text-4xl lg:text-5xl text-muted-foreground font-medium">Revenue Intelligence para SaaS B2B</span>
           </h1>
 
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed">
-            5 Brains autônomos, 6 EdFunk Agents, billing engine, API gateway e marketplace —
-            orquestrados pelo Gayson Core para escalar em qualquer nicho.
+            5 Brains de IA, 6 Agents autônomos, API gateway e billing engine —
+            infraestrutura completa para escalar seu SaaS B2B com inteligência de receita.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -62,12 +62,12 @@ const Hero = () => {
           className="grid grid-cols-3 sm:grid-cols-6 gap-6 max-w-4xl mx-auto mt-20"
         >
           {[
-            { value: "5", label: "Brains" },
-            { value: "6", label: "EdFunk Agents" },
+            { value: "5", label: "AI Brains" },
+            { value: "6", label: "Agents" },
             { value: "12+", label: "Integrações" },
-            { value: "35+", label: "Features" },
+            { value: "99.9%", label: "Uptime" },
             { value: "3", label: "Planos" },
-            { value: "∞", label: "Nichos" },
+            { value: "<50ms", label: "Latência" },
           ].map((stat) => (
             <div key={stat.label} className="text-center">
               <div className="text-3xl font-bold text-gradient-primary">{stat.value}</div>
