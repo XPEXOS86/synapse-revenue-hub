@@ -1,26 +1,32 @@
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import logo from "@/assets/logo.png";
 
 const Navbar = () => {
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 glass">
-      <div className="container px-6 h-16 flex items-center justify-between">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/30">
+      <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Gold Mail Validator" className="h-7 w-7 rounded" />
-          <span className="font-display font-bold text-lg">Gold Mail Validator</span>
+          <span className="font-display font-bold text-base tracking-tight">Xpex Systems AI</span>
         </Link>
-        <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">
-          <a href="/#features" className="hover:text-foreground transition-colors">Recursos</a>
-          <a href="/#pricing" className="hover:text-foreground transition-colors">Preços</a>
-          <a href="/#integrations" className="hover:text-foreground transition-colors">Integrações</a>
-          <Link to="/docs" className="hover:text-foreground transition-colors">API Docs</Link>
+        <div className="hidden lg:flex items-center gap-7 text-sm text-muted-foreground">
+          <a href="/#product" className="hover:text-foreground transition-colors">Product</a>
+          <Link to="/docs" className="hover:text-foreground transition-colors">API</Link>
+          <a href="/#security" className="hover:text-foreground transition-colors">Security</a>
+          <a href="/#pricing" className="hover:text-foreground transition-colors">Pricing</a>
+          <a href="/#company" className="hover:text-foreground transition-colors">Company</a>
         </div>
-        <Link to="/auth">
-          <Button size="sm" className="font-semibold">
-            Começar grátis
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link to="/auth">
+            <Button variant="ghost" size="sm" className="text-muted-foreground">
+              Login
+            </Button>
+          </Link>
+          <Link to="/auth">
+            <Button size="sm" className="font-semibold">
+              Start Free
+            </Button>
+          </Link>
+        </div>
       </div>
     </nav>
   );

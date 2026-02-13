@@ -1,10 +1,12 @@
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
-import BrainGrid from "@/components/landing/BrainGrid";
-import Testimonials from "@/components/landing/Testimonials";
+import InfraStatus from "@/components/landing/InfraStatus";
+import ProductOverview from "@/components/landing/ProductOverview";
+import LiveValidationPanel from "@/components/landing/LiveValidationPanel";
+import BulkValidation from "@/components/landing/BulkValidation";
+import SecuritySection from "@/components/landing/SecuritySection";
 import Pricing from "@/components/landing/Pricing";
-import EdFunkAgents from "@/components/landing/EdFunkAgents";
-import Integrations from "@/components/landing/Integrations";
+import AboutSection from "@/components/landing/AboutSection";
 import CTA from "@/components/landing/CTA";
 import Footer from "@/components/landing/Footer";
 
@@ -13,16 +15,16 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
       <Hero />
-      <BrainGrid />
-      <Testimonials />
+      <InfraStatus />
+      <ProductOverview />
+      <LiveValidationPanel />
+      <BulkValidation />
+      <SecuritySection />
       <div id="pricing">
         <Pricing />
       </div>
-      <div id="agents">
-        <EdFunkAgents />
-      </div>
-      <div id="integrations">
-        <Integrations />
+      <div id="company">
+        <AboutSection />
       </div>
       <CTA />
       <Footer />
