@@ -25,27 +25,22 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const supabaseUser = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
+    // Get user from token
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabaseUser.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub;
+    const userId = user.id;
     const body = await req.json();
     const { action } = body;
 
     if (action === "ensure-tenant") {
-      // Check if user already has a tenant
       const { data: existing } = await supabaseAdmin
         .from("tenants")
         .select("id, name, slug, plan, status")
@@ -59,7 +54,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Create default tenant
       const slug = `tenant-${userId.substring(0, 8)}`;
       const { data: newTenant, error: tenantErr } = await supabaseAdmin
         .from("tenants")
@@ -74,7 +68,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Create default agents
       const defaultAgents = [
         { name: "Billing Agent", role: "Gerencia planos, pay-per-use, upgrades e suspensões", brain: "all" },
         { name: "Monitor Agent", role: "Monitora performance, alertas, falhas e logs", brain: "all" },
@@ -102,7 +95,6 @@ Deno.serve(async (req) => {
     if (action === "create-api-key") {
       const { name, brain } = body;
 
-      // Get user's tenant
       const { data: tenant } = await supabaseAdmin
         .from("tenants")
         .select("id")
@@ -117,7 +109,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Generate API key
       const rawKey = `xpx_${crypto.randomUUID().replace(/-/g, "")}`;
       const keyPrefix = rawKey.substring(0, 8);
       const encoder = new TextEncoder();
@@ -146,7 +137,6 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Return the raw key only on creation
       return new Response(
         JSON.stringify({ api_key: { ...apiKey, raw_key: rawKey } }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -166,12 +156,38 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "list-api-keys") {
+      const { data: tenant } = await supabaseAdmin
+        .from("tenants")
+        .select("id")
+        .eq("owner_id", userId)
+        .limit(1)
+        .single();
+
+      if (!tenant) {
+        return new Response(JSON.stringify({ keys: [] }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const { data: keys } = await supabaseAdmin
+        .from("api_keys")
+        .select("id, name, key_prefix, brain, rate_limit, is_active, created_at, last_used_at")
+        .eq("tenant_id", tenant.id)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false });
+
+      return new Response(JSON.stringify({ keys: keys || [] }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
+    return new Response(JSON.stringify({ error: "Internal server error", details: String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
