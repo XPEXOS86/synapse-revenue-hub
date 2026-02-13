@@ -1,14 +1,24 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Navbar from "@/components/landing/Navbar";
 import Footer from "@/components/landing/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Database, TrendingUp, Target, Workflow, Copy, Play, CheckCircle, AlertCircle, Code, Terminal, Sparkles, Loader2 } from "lucide-react";
+import { Mail, Database, TrendingUp, Target, Workflow, Copy, Play, CheckCircle, AlertCircle, Code, Terminal, Sparkles, Loader2, ShieldCheck, ShieldAlert, ShieldX, Trash2, Clock, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
+interface SandboxResult {
+  email: string;
+  score: number;
+  risk: string;
+  checks: Record<string, boolean>;
+  response_time_ms: number;
+  timestamp: string;
+}
 
 interface EndpointDoc {
   id: string;
@@ -123,7 +133,52 @@ const ApiDocs = () => {
   const [responseStatus, setResponseStatus] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState("playground");
 
+  // Sandbox state
+  const [sandboxEmail, setSandboxEmail] = useState("");
+  const [sandboxLoading, setSandboxLoading] = useState(false);
+  const [sandboxResults, setSandboxResults] = useState<SandboxResult[]>([]);
+  const [sandboxLatest, setSandboxLatest] = useState<SandboxResult | null>(null);
+
   const current = endpoints.find((e) => e.id === activeEndpoint)!;
+
+  const handleSandboxTest = useCallback(async () => {
+    if (!apiKey) {
+      toast.error("Insira sua API key na sidebar para testar");
+      return;
+    }
+    if (!sandboxEmail || !sandboxEmail.includes("@")) {
+      toast.error("Insira um email válido para testar");
+      return;
+    }
+    setSandboxLoading(true);
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/validate-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey },
+        body: JSON.stringify({ email: sandboxEmail }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || "Erro ao validar email");
+        return;
+      }
+      const result: SandboxResult = {
+        email: data.email,
+        score: data.score,
+        risk: data.risk,
+        checks: data.checks,
+        response_time_ms: data.response_time_ms,
+        timestamp: new Date().toISOString(),
+      };
+      setSandboxLatest(result);
+      setSandboxResults((prev) => [result, ...prev].slice(0, 20));
+      toast.success(`Email validado: Score ${data.score}/100`);
+    } catch (err) {
+      toast.error("Erro de conexão");
+    } finally {
+      setSandboxLoading(false);
+    }
+  }, [apiKey, sandboxEmail]);
 
   const handleTest = async () => {
     if (!apiKey) {
@@ -200,10 +255,10 @@ print(response.json())`;
             API Documentation
           </Badge>
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            XPEX <span className="text-primary">API Reference</span>
+            Gold Email Validator <span className="text-primary">API Reference</span>
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Documentação completa dos 5 Brains com playground interativo. Teste endpoints ao vivo com seu API key.
+            Documentação completa com sandbox interativo. Teste a validação de emails ao vivo com seu API key.
           </p>
         </div>
 
@@ -221,6 +276,7 @@ print(response.json())`;
                     setResponse(null);
                     setRequestBody("");
                     setResponseStatus(null);
+                    setActiveTab(ep.id === "validate-email" ? "sandbox" : "playground");
                   }}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-all ${
                     activeEndpoint === ep.id
@@ -314,7 +370,12 @@ print(response.json())`;
             </Card>
 
             <Tabs value={activeTab} onValueChange={setActiveTab}>
-              <TabsList>
+              <TabsList className="flex-wrap">
+                {current.id === "validate-email" && (
+                  <TabsTrigger value="sandbox" className="gap-1.5">
+                    <Zap className="w-3.5 h-3.5" /> Sandbox
+                  </TabsTrigger>
+                )}
                 <TabsTrigger value="playground" className="gap-1.5">
                   <Play className="w-3.5 h-3.5" /> Playground
                 </TabsTrigger>
@@ -329,6 +390,139 @@ print(response.json())`;
                 </TabsTrigger>
                 <TabsTrigger value="response">Sample Response</TabsTrigger>
               </TabsList>
+
+              {/* Interactive Sandbox for Email Validation */}
+              <TabsContent value="sandbox" className="space-y-4">
+                <Card className="border-primary/20">
+                  <CardHeader>
+                    <div className="flex items-center gap-2">
+                      <Zap className="w-5 h-5 text-primary" />
+                      <CardTitle className="text-lg">Email Validation Sandbox</CardTitle>
+                    </div>
+                    <CardDescription>Teste emails em tempo real e veja os resultados visuais instantaneamente.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-3">
+                      <Input
+                        type="email"
+                        placeholder="Digite um email para validar..."
+                        value={sandboxEmail}
+                        onChange={(e) => setSandboxEmail(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSandboxTest()}
+                        className="flex-1 font-mono"
+                      />
+                      <Button onClick={handleSandboxTest} disabled={sandboxLoading} className="gap-2 min-w-[140px]">
+                        {sandboxLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                        {sandboxLoading ? "Validando..." : "Validar"}
+                      </Button>
+                    </div>
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      {["ceo@google.com", "test@mailinator.com", "admin@localhost", "user@empresa.com.br"].map((sample) => (
+                        <Button
+                          key={sample}
+                          variant="outline"
+                          size="sm"
+                          className="text-xs font-mono h-7"
+                          onClick={() => { setSandboxEmail(sample); }}
+                        >
+                          {sample}
+                        </Button>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Latest Result */}
+                {sandboxLatest && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {/* Score Gauge */}
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="relative w-32 h-32">
+                            <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
+                              <circle cx="60" cy="60" r="52" fill="none" stroke="hsl(var(--muted))" strokeWidth="10" />
+                              <circle
+                                cx="60" cy="60" r="52" fill="none"
+                                stroke={sandboxLatest.score >= 80 ? "hsl(var(--primary))" : sandboxLatest.score >= 50 ? "hsl(38 92% 50%)" : "hsl(0 84% 60%)"}
+                                strokeWidth="10"
+                                strokeLinecap="round"
+                                strokeDasharray={`${(sandboxLatest.score / 100) * 327} 327`}
+                              />
+                            </svg>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center">
+                              <span className="text-3xl font-bold">{sandboxLatest.score}</span>
+                              <span className="text-xs text-muted-foreground">/ 100</span>
+                            </div>
+                          </div>
+                          <Badge
+                            className={`mt-3 gap-1 ${
+                              sandboxLatest.risk === "low"
+                                ? "bg-primary/10 text-primary border-primary/20"
+                                : sandboxLatest.risk === "medium"
+                                ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                : "bg-destructive/10 text-destructive border-destructive/20"
+                            }`}
+                          >
+                            {sandboxLatest.risk === "low" ? <ShieldCheck className="w-3 h-3" /> : sandboxLatest.risk === "medium" ? <ShieldAlert className="w-3 h-3" /> : <ShieldX className="w-3 h-3" />}
+                            {sandboxLatest.risk === "low" ? "Baixo Risco" : sandboxLatest.risk === "medium" ? "Risco Médio" : "Alto Risco"}
+                          </Badge>
+                        </div>
+
+                        {/* Checks */}
+                        <div className="md:col-span-2 space-y-2">
+                          <p className="font-mono text-sm text-muted-foreground mb-3">{sandboxLatest.email}</p>
+                          {Object.entries(sandboxLatest.checks).map(([key, passed]) => (
+                            <div key={key} className="flex items-center gap-3 p-2 rounded-md bg-muted/30">
+                              {passed ? (
+                                <CheckCircle className="w-4 h-4 text-primary shrink-0" />
+                              ) : (
+                                <AlertCircle className="w-4 h-4 text-destructive shrink-0" />
+                              )}
+                              <span className="text-sm font-medium">
+                                {key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                              </span>
+                              <Badge variant="outline" className="ml-auto text-xs">
+                                {passed ? "PASS" : "FAIL"}
+                              </Badge>
+                            </div>
+                          ))}
+                          <div className="flex items-center gap-2 pt-2 text-xs text-muted-foreground">
+                            <Clock className="w-3 h-3" />
+                            <span>{sandboxLatest.response_time_ms}ms</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* History */}
+                {sandboxResults.length > 1 && (
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">Histórico de Testes</CardTitle>
+                        <Button variant="ghost" size="sm" className="gap-1 h-7 text-xs" onClick={() => { setSandboxResults([]); setSandboxLatest(null); }}>
+                          <Trash2 className="w-3 h-3" /> Limpar
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 max-h-64 overflow-auto">
+                        {sandboxResults.slice(1).map((r, i) => (
+                          <div key={i} className="flex items-center gap-3 p-2 rounded-md bg-muted/30 text-sm">
+                            {r.risk === "low" ? <ShieldCheck className="w-4 h-4 text-primary" /> : r.risk === "medium" ? <ShieldAlert className="w-4 h-4 text-amber-500" /> : <ShieldX className="w-4 h-4 text-destructive" />}
+                            <span className="font-mono flex-1 truncate">{r.email}</span>
+                            <Badge variant="outline" className="text-xs">{r.score}/100</Badge>
+                            <span className="text-xs text-muted-foreground">{r.response_time_ms}ms</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
 
               <TabsContent value="playground" className="space-y-4">
                 <Card>
