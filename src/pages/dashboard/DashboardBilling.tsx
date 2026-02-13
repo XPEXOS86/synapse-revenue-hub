@@ -4,18 +4,18 @@ import { Badge } from "@/components/ui/badge";
 import { motion } from "framer-motion";
 
 const currentPlan = {
-  name: "Growth",
-  price: "R$1.997",
+  name: "Pro",
+  price: "$49",
   period: "/mês",
   renewDate: "13 Mar 2026",
-  apiCalls: { used: 32400, limit: 50000 },
+  apiCalls: { used: 3200, limit: 5000 },
 };
 
 const invoices = [
-  { id: "INV-2026-02", date: "01 Fev 2026", amount: "R$1.997,00", status: "Pago" },
-  { id: "INV-2026-01", date: "01 Jan 2026", amount: "R$1.997,00", status: "Pago" },
-  { id: "INV-2025-12", date: "01 Dez 2025", amount: "R$497,00", status: "Pago" },
-  { id: "INV-2025-11", date: "01 Nov 2025", amount: "R$497,00", status: "Pago" },
+  { id: "INV-2026-02", date: "01 Fev 2026", amount: "$49.00", status: "Pago" },
+  { id: "INV-2026-01", date: "01 Jan 2026", amount: "$49.00", status: "Pago" },
+  { id: "INV-2025-12", date: "01 Dez 2025", amount: "$19.00", status: "Pago" },
+  { id: "INV-2025-11", date: "01 Nov 2025", amount: "$19.00", status: "Pago" },
 ];
 
 const DashboardBilling = () => {

@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Brain, ArrowRight, Zap } from "lucide-react";
+import { Mail, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -15,19 +15,16 @@ const CTA = () => {
         >
           <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
           <div className="relative z-10">
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <Brain className="h-10 w-10 text-primary animate-float" />
-              <Zap className="h-8 w-8 text-accent animate-float" style={{ animationDelay: "1s" }} />
-            </div>
+            <Mail className="h-12 w-12 text-primary mx-auto mb-6 animate-float" />
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Pronto para o <span className="text-gradient-primary">XPEX AI</span>?
+              Comece a validar emails <span className="text-gradient-primary">agora</span>
             </h2>
             <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-              5 Brains de IA, 6 Agents autônomos, billing integrado e API gateway — infraestrutura SaaS B2B pronta para escalar.
+              API pronta, dashboard completo, relatórios automáticos. A partir de $19/mês.
             </p>
-            <Link to="/dashboard">
+            <Link to="/auth">
               <Button size="lg" className="h-13 px-8 text-base font-semibold shadow-glow">
-                Acessar agora
+                Criar conta grátis
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
