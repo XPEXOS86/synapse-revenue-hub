@@ -77,6 +77,21 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Rate limiting: count requests in last hour
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { count: usageCount } = await supabase
+      .from("usage_logs")
+      .select("id", { count: "exact", head: true })
+      .eq("api_key_id", keyData.id)
+      .gte("created_at", oneHourAgo);
+
+    if ((usageCount ?? 0) >= (keyData.rate_limit ?? 1000)) {
+      return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again later." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
+      });
+    }
+
     // Check brain access
     if (keyData.brain !== "all" && keyData.brain !== "email-validation") {
       return new Response(JSON.stringify({ error: "API key not authorized for this brain" }), {

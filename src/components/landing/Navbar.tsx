@@ -14,6 +14,7 @@ const Navbar = () => {
           <a href="/#brains" className="hover:text-foreground transition-colors">Brains</a>
           <a href="/#agents" className="hover:text-foreground transition-colors">EdFunk Agents</a>
           <a href="/#integrations" className="hover:text-foreground transition-colors">Integrações</a>
+          <Link to="/docs" className="hover:text-foreground transition-colors">API Docs</Link>
         </div>
         <Link to="/auth">
           <Button size="sm" className="font-semibold">
