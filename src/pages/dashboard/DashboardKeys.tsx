@@ -1,45 +1,127 @@
-import { useState } from "react";
-import { Copy, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Copy, Eye, EyeOff, Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { motion } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ApiKey {
   id: string;
   name: string;
-  key: string;
-  created: string;
-  lastUsed: string;
+  key_prefix: string;
   brain: string;
+  rate_limit: number;
+  is_active: boolean;
+  last_used_at: string | null;
+  created_at: string;
+  raw_key?: string;
 }
 
-const initialKeys: ApiKey[] = [
-  { id: "1", name: "Production Key", key: "rlb_live_a1b2c3d4e5f6g7h8i9j0", created: "10 Jan 2026", lastUsed: "2 min atrás", brain: "All Brains" },
-  { id: "2", name: "Email Validation", key: "rlb_ev_k1l2m3n4o5p6q7r8s9t0", created: "15 Jan 2026", lastUsed: "1h atrás", brain: "Email Validation" },
-  { id: "3", name: "Data Enrichment", key: "rlb_de_u1v2w3x4y5z6a7b8c9d0", created: "20 Jan 2026", lastUsed: "3h atrás", brain: "Data Enrichment" },
-];
-
 const DashboardKeys = () => {
-  const [keys] = useState<ApiKey[]>(initialKeys);
-  const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
+  const [keys, setKeys] = useState<ApiKey[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [newKeyName, setNewKeyName] = useState("");
+  const [newKeyBrain, setNewKeyBrain] = useState("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [revealedKeys, setRevealedKeys] = useState<Set<string>>(new Set());
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const toggleVisibility = (id: string) => {
-    setVisibleKeys((prev) => {
+  const fetchKeys = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("api_keys")
+      .select("id, name, key_prefix, brain, rate_limit, is_active, last_used_at, created_at")
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) setKeys(data as ApiKey[]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    // Ensure tenant exists, then fetch keys
+    const init = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.functions.invoke("manage-keys", {
+          body: { action: "ensure-tenant" },
+        });
+      }
+      fetchKeys();
+    };
+    init();
+  }, [fetchKeys]);
+
+  const createKey = async () => {
+    if (!newKeyName.trim()) return;
+    setCreating(true);
+
+    const { data, error } = await supabase.functions.invoke("manage-keys", {
+      body: { action: "create-api-key", name: newKeyName, brain: newKeyBrain },
+    });
+
+    setCreating(false);
+
+    if (error || data?.error) {
+      toast({ title: "Erro", description: data?.error || "Falha ao criar chave", variant: "destructive" });
+      return;
+    }
+
+    const createdKey = data.api_key;
+    setNewlyCreatedKey(createdKey.raw_key);
+    setKeys((prev) => [createdKey, ...prev]);
+    setNewKeyName("");
+    setNewKeyBrain("all");
+    setDialogOpen(false);
+    toast({ title: "API Key criada!", description: "Copie a chave agora — ela não será exibida novamente." });
+  };
+
+  const deleteKey = async (keyId: string) => {
+    await supabase.functions.invoke("manage-keys", {
+      body: { action: "delete-api-key", keyId },
+    });
+    setKeys((prev) => prev.filter((k) => k.id !== keyId));
+    toast({ title: "Removida", description: "API Key desativada com sucesso." });
+  };
+
+  const copyKey = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copiado!", description: "Copiado para o clipboard." });
+  };
+
+  const toggleReveal = (id: string) => {
+    setRevealedKeys((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
   };
 
-  const copyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    toast({ title: "Copiado!", description: "API key copiada para o clipboard." });
+  const formatDate = (d: string) => new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+
+  const timeAgo = (d: string | null) => {
+    if (!d) return "Nunca";
+    const diff = Date.now() - new Date(d).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins} min atrás`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h atrás`;
+    return `${Math.floor(hrs / 24)}d atrás`;
   };
 
-  const maskKey = (key: string) => key.slice(0, 8) + "••••••••••••••••";
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -48,45 +130,111 @@ const DashboardKeys = () => {
           <h1 className="text-2xl font-bold mb-1">API Keys</h1>
           <p className="text-sm text-muted-foreground">Gerencie suas chaves de acesso à API.</p>
         </div>
-        <Button size="sm" className="font-semibold">
-          <Plus className="h-4 w-4 mr-2" />
-          Nova Key
-        </Button>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="font-semibold">
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Key
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Criar Nova API Key</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label>Nome</Label>
+                <Input placeholder="Ex: Production Key" value={newKeyName} onChange={(e) => setNewKeyName(e.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>Brain</Label>
+                <Select value={newKeyBrain} onValueChange={setNewKeyBrain}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Brains</SelectItem>
+                    <SelectItem value="email-validation">Email Validation</SelectItem>
+                    <SelectItem value="data-enrichment">Data Enrichment</SelectItem>
+                    <SelectItem value="revenue-intelligence">Revenue Intelligence</SelectItem>
+                    <SelectItem value="ad-optimization">Ad Optimization</SelectItem>
+                    <SelectItem value="workflow-automation">Workflow Automation</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={createKey} disabled={creating || !newKeyName.trim()} className="w-full">
+                {creating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar Key"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <div className="space-y-3">
-        {keys.map((k, i) => (
-          <motion.div
-            key={k.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="bg-gradient-card rounded-xl border border-border/50 p-5"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="font-semibold">{k.name}</h3>
-                <p className="text-xs text-muted-foreground">Criada em {k.created} · Último uso: {k.lastUsed}</p>
+      {newlyCreatedKey && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-primary/10 border border-primary/30 rounded-xl p-4"
+        >
+          <p className="text-sm font-semibold text-primary mb-2">⚠️ Copie sua chave agora — ela não será exibida novamente:</p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 text-xs bg-muted/50 rounded-md px-3 py-2 font-mono break-all">
+              {newlyCreatedKey}
+            </code>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyKey(newlyCreatedKey)}>
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button variant="ghost" size="sm" className="mt-2 text-xs" onClick={() => setNewlyCreatedKey(null)}>
+            Fechar
+          </Button>
+        </motion.div>
+      )}
+
+      {keys.length === 0 ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <p className="text-sm">Nenhuma API Key ainda. Crie sua primeira chave para começar.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {keys.map((k, i) => (
+            <motion.div
+              key={k.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05 }}
+              className="bg-gradient-card rounded-xl border border-border/50 p-5"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="font-semibold">{k.name}</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Criada em {formatDate(k.created_at)} · Último uso: {timeAgo(k.last_used_at)}
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-xs">{k.brain === "all" ? "All Brains" : k.brain}</Badge>
               </div>
-              <Badge variant="outline" className="text-xs">{k.brain}</Badge>
-            </div>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 text-xs bg-muted/50 rounded-md px-3 py-2 font-mono">
-                {visibleKeys.has(k.id) ? k.key : maskKey(k.key)}
-              </code>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleVisibility(k.id)}>
-                {visibleKeys.has(k.id) ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyKey(k.key)}>
-                <Copy className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </motion.div>
-        ))}
-      </div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 text-xs bg-muted/50 rounded-md px-3 py-2 font-mono">
+                  {revealedKeys.has(k.id) ? `${k.key_prefix}••••••••••••••••••••••••` : `${k.key_prefix}••••••••••••••••`}
+                </code>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => toggleReveal(k.id)}>
+                  {revealedKeys.has(k.id) ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyKey(k.key_prefix + "...")}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive"
+                  onClick={() => deleteKey(k.id)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
