@@ -54,27 +54,23 @@ Deno.serve(async (req) => {
       const tenantIds = tenants.map((t) => t.id);
       const now = new Date().toISOString();
 
-      // Update heartbeat and increment events for running agents
-      const { data: updated, error } = await supabaseAdmin
+      // Get running agents first
+      const { data: runningAgents } = await supabaseAdmin
         .from("agents")
-        .update({ last_heartbeat: now, events_count: undefined })
+        .select("id, events_count")
         .in("tenant_id", tenantIds)
-        .eq("status", "running")
-        .select("id, name, status, last_heartbeat");
+        .eq("status", "running");
 
-      // Use raw update with increment for events_count
-      for (const tid of tenantIds) {
-        await supabaseAdmin.rpc("increment_agent_events", { _tenant_id: tid }).catch(() => {});
-      }
+      // Update each agent's heartbeat and increment events
+      const updates = (runningAgents || []).map((a) =>
+        supabaseAdmin
+          .from("agents")
+          .update({ last_heartbeat: now, events_count: (a.events_count || 0) + 1 })
+          .eq("id", a.id)
+      );
+      await Promise.all(updates);
 
-      // Also mark agents as "stale" if heartbeat > 5 min ago
-      const staleThreshold = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-      await supabaseAdmin
-        .from("agents")
-        .update({ status: "stale" })
-        .in("tenant_id", tenantIds)
-        .eq("status", "running")
-        .lt("last_heartbeat", staleThreshold);
+      const updated = runningAgents || [];
 
       return new Response(
         JSON.stringify({ action: "pulse", agents_updated: updated?.length ?? 0, timestamp: now }),
