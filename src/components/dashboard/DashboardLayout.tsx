@@ -1,8 +1,12 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import { Outlet } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const DashboardLayout = () => {
+  const { user } = useAuth();
+  const initial = user?.email?.charAt(0).toUpperCase() || "U";
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -12,7 +16,7 @@ const DashboardLayout = () => {
             <SidebarTrigger />
             <div className="flex-1" />
             <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
-              U
+              {initial}
             </div>
           </header>
           <main className="flex-1 p-6 overflow-auto">
