@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import XpexLogo from "./XpexLogo";
 
 const columns = [
   {
@@ -33,8 +34,11 @@ const Footer = () => {
     <footer className="border-t border-border/30 py-14">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="grid sm:grid-cols-4 gap-10 mb-10">
-          <div>
-            <span className="font-display font-bold text-sm">Xpex Systems AI</span>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <XpexLogo className="w-5 h-5" />
+              <span className="font-display font-bold text-sm">Xpex Systems AI</span>
+            </div>
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
               Enterprise email intelligence infrastructure.
             </p>
