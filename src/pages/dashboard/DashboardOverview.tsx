@@ -76,7 +76,7 @@ const DashboardOverview = () => {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Visão geral da sua plataforma XPEX Gayson.</p>
+        <p className="text-sm text-muted-foreground">Visão geral da sua plataforma XPEX AI.</p>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
