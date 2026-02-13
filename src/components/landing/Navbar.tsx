@@ -1,13 +1,13 @@
-import { Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import logo from "@/assets/logo.png";
 
 const Navbar = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 glass">
       <div className="container px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <Mail className="h-6 w-6 text-primary" />
+          <img src={logo} alt="Gold Email Validator" className="h-7 w-7 rounded" />
           <span className="font-display font-bold text-lg">Gold Email Validator</span>
         </Link>
         <div className="hidden md:flex items-center gap-8 text-sm text-muted-foreground">

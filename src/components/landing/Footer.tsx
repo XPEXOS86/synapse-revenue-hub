@@ -1,11 +1,11 @@
-import { Mail } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const Footer = () => {
   return (
     <footer className="border-t border-border/30 py-12">
       <div className="container px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-2 text-muted-foreground">
-          <Mail className="h-4 w-4 text-primary" />
+          <img src={logo} alt="Gold Email Validator" className="h-5 w-5 rounded" />
           <span className="text-sm font-display font-medium">Gold Email Validator</span>
         </div>
         <p className="text-xs text-muted-foreground">
