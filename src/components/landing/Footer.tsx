@@ -5,26 +5,26 @@ const columns = [
   {
     title: "Product",
     links: [
-      { label: "Overview", href: "/#product" },
-      { label: "API", href: "/docs" },
-      { label: "Bulk Validation", href: "/#product" },
-      { label: "Pricing", href: "/#pricing" },
+      { label: "Overview", href: "/overview" },
+      { label: "API", href: "/api" },
+      { label: "Bulk Validation", href: "/bulk-validation" },
+      { label: "Pricing", href: "/pricing-info" },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "About", href: "/#company" },
-      { label: "Security", href: "/#security" },
-      { label: "Enterprise", href: "/#pricing" },
-      { label: "Contact", href: "/#company" },
+      { label: "About", href: "/about" },
+      { label: "Security", href: "/security" },
+      { label: "Enterprise", href: "/enterprise-solutions" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   {
     title: "Legal",
     links: [
-      { label: "Privacy Policy", href: "#" },
-      { label: "Terms of Service", href: "#" },
+      { label: "Privacy Policy", href: "/privacy-policy" },
+      { label: "Terms of Service", href: "/terms-of-service" },
     ],
   },
 ];
@@ -49,15 +49,9 @@ const Footer = () => {
               <ul className="space-y-2">
                 {col.links.map((link) => (
                   <li key={link.label}>
-                    {link.href.startsWith("/") && !link.href.startsWith("/#") ? (
-                      <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                        {link.label}
-                      </Link>
-                    ) : (
-                      <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                        {link.label}
-                      </a>
-                    )}
+                    <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

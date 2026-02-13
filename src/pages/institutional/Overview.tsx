@@ -1,0 +1,3 @@
+import InstitutionalPage from "./InstitutionalPage";
+const Overview = () => <InstitutionalPage category="Product" title="Product Overview" headline="Enterprise Email Intelligence Infrastructure" content={["Gold Mail Validator is an enterprise-grade email intelligence platform developed by Xpex Systems AI.","The platform delivers advanced validation, risk scoring, and domain intelligence to help businesses maintain high-quality email databases.","Our infrastructure is designed for scalability, performance, and secure multi-tenant environments.","From real-time validation to large-scale bulk processing, the system supports modern marketing, SaaS, and enterprise operations."]} />;
+export default Overview;
