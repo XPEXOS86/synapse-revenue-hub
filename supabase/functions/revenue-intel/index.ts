@@ -23,13 +23,44 @@ function analyzeFunnel(data: Record<string, unknown>) {
   const arpu = customers > 0 ? (revenue / customers).toFixed(2) : "0";
   const ltv_estimate = (Number(arpu) * 12).toFixed(2);
 
-  const suggestions: string[] = [];
-  if (leads / visitors < 0.05) suggestions.push("Optimize landing page – visitor-to-lead < 5%");
-  if (trials / leads < 0.1) suggestions.push("Improve lead nurturing – lead-to-trial < 10%");
-  if (customers / trials < 0.2) suggestions.push("Review onboarding – trial-to-customer < 20%");
-  if (suggestions.length === 0) suggestions.push("Funnel looks healthy!");
+  return { conversion_rates: conversionRates, arpu, ltv_estimate };
+}
 
-  return { conversion_rates: conversionRates, arpu, ltv_estimate, suggestions };
+async function getAiInsights(funnelData: Record<string, unknown>, analysis: Record<string, unknown>): Promise<string> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) return "AI insights unavailable.";
+
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content: "You are a SaaS revenue analyst. Given funnel metrics, provide 3-5 concise, actionable suggestions in Portuguese (BR). Be specific with numbers. Respond as a JSON array of strings.",
+          },
+          {
+            role: "user",
+            content: `Funnel data: ${JSON.stringify(funnelData)}\nAnalysis: ${JSON.stringify(analysis)}`,
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) return "AI insights temporarily unavailable.";
+
+    const json = await res.json();
+    const content = json.choices?.[0]?.message?.content || "";
+    try {
+      return JSON.parse(content);
+    } catch {
+      return content;
+    }
+  } catch {
+    return "AI insights temporarily unavailable.";
+  }
 }
 
 Deno.serve(async (req) => {
@@ -64,7 +95,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Rate limiting
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count: usageCount } = await supabase
       .from("usage_logs")
@@ -94,6 +124,7 @@ Deno.serve(async (req) => {
     }
 
     const analysis = analyzeFunnel(body);
+    const ai_suggestions = await getAiInsights(body, analysis);
     const responseTime = Date.now() - startTime;
 
     await supabase.from("usage_logs").insert({
@@ -105,7 +136,7 @@ Deno.serve(async (req) => {
     await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", keyData.id);
 
     return new Response(
-      JSON.stringify({ input: { visitors, leads, trials, customers, revenue }, analysis, response_time_ms: responseTime }),
+      JSON.stringify({ input: { visitors, leads, trials, customers, revenue }, analysis: { ...analysis, ai_suggestions }, response_time_ms: responseTime }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

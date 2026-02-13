@@ -12,11 +12,11 @@ interface WorkflowStep {
   config?: Record<string, unknown>;
 }
 
+const supportedServices = ["zapier", "hubspot", "stripe", "email", "webhook", "slack", "sheets"];
+const supportedActions = ["trigger", "filter", "transform", "send", "create", "update", "delete", "notify"];
+
 function validateWorkflow(steps: WorkflowStep[]) {
   const errors: string[] = [];
-  const supportedServices = ["zapier", "hubspot", "stripe", "email", "webhook", "slack", "sheets"];
-  const supportedActions = ["trigger", "filter", "transform", "send", "create", "update", "delete", "notify"];
-
   steps.forEach((step, i) => {
     if (!step.action) errors.push(`Step ${i + 1}: missing action`);
     if (!step.service) errors.push(`Step ${i + 1}: missing service`);
@@ -27,7 +27,6 @@ function validateWorkflow(steps: WorkflowStep[]) {
       errors.push(`Step ${i + 1}: unsupported action "${step.action}". Supported: ${supportedActions.join(", ")}`);
     }
   });
-
   return errors;
 }
 
@@ -40,6 +39,40 @@ function simulateWorkflow(steps: WorkflowStep[]) {
     execution_time_ms: Math.floor(Math.random() * 200) + 50,
     output: { message: `${step.action} on ${step.service} completed` },
   }));
+}
+
+async function getAiWorkflowSuggestions(description: string): Promise<unknown> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) return "AI suggestions unavailable.";
+
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content: `You are a workflow automation architect. Given a business process description, suggest an optimal workflow using these services: ${supportedServices.join(", ")} and actions: ${supportedActions.join(", ")}. Respond in Portuguese (BR) as JSON: { "workflow_name": string, "steps": [{ "action": string, "service": string, "description": string }], "explanation": string }`,
+          },
+          { role: "user", content: description },
+        ],
+      }),
+    });
+
+    if (!res.ok) return "AI suggestions temporarily unavailable.";
+
+    const json = await res.json();
+    const content = json.choices?.[0]?.message?.content || "";
+    try {
+      return JSON.parse(content);
+    } catch {
+      return content;
+    }
+  } catch {
+    return "AI suggestions temporarily unavailable.";
+  }
 }
 
 Deno.serve(async (req) => {
@@ -74,7 +107,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Rate limiting
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count: usageCount } = await supabase
       .from("usage_logs")
@@ -95,7 +127,30 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action: wfAction, workflow_name, steps } = body;
+    const { action: wfAction, workflow_name, steps, description } = body;
+
+    // NEW: AI-powered workflow suggestion
+    if (wfAction === "suggest") {
+      if (!description || typeof description !== "string") {
+        return new Response(JSON.stringify({ error: "Provide 'description' of the business process" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const suggestion = await getAiWorkflowSuggestions(description);
+      const responseTime = Date.now() - startTime;
+
+      await supabase.from("usage_logs").insert({
+        tenant_id: keyData.tenant_id, api_key_id: keyData.id,
+        endpoint: "/workflow-automation", brain: "workflow-automation",
+        status_code: 200, response_time_ms: responseTime,
+      });
+
+      return new Response(
+        JSON.stringify({ action: "suggest", suggestion, response_time_ms: responseTime }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (wfAction === "validate") {
       if (!steps || !Array.isArray(steps)) {
@@ -140,7 +195,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    return new Response(JSON.stringify({ error: "Unknown action. Use 'validate' or 'simulate'" }), {
+    return new Response(JSON.stringify({ error: "Unknown action. Use 'validate', 'simulate', or 'suggest'" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
