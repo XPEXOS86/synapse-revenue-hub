@@ -1,6 +1,7 @@
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import BrainGrid from "@/components/landing/BrainGrid";
+import Testimonials from "@/components/landing/Testimonials";
 import Pricing from "@/components/landing/Pricing";
 import EdFunkAgents from "@/components/landing/EdFunkAgents";
 import Integrations from "@/components/landing/Integrations";
@@ -13,6 +14,7 @@ const Index = () => {
       <Navbar />
       <Hero />
       <BrainGrid />
+      <Testimonials />
       <div id="pricing">
         <Pricing />
       </div>
