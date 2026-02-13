@@ -74,6 +74,26 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Create default agents
+      const defaultAgents = [
+        { name: "Billing Agent", role: "Gerencia planos, pay-per-use, upgrades e suspensões", brain: "all" },
+        { name: "Monitor Agent", role: "Monitora performance, alertas, falhas e logs", brain: "all" },
+        { name: "Marketing Agent", role: "Integração e automação de campanhas", brain: "all" },
+        { name: "Integration Agent", role: "Conecta SaaS externos, Zapier e webhooks", brain: "all" },
+        { name: "Brain Sync Agent", role: "Mantém Brains atualizados e replicáveis", brain: "gayson-core" },
+        { name: "Automation Agent", role: "Otimiza fluxo interno, cross-sell e upsell automático", brain: "gayson-core" },
+      ];
+
+      await supabaseAdmin.from("agents").insert(
+        defaultAgents.map((a) => ({
+          tenant_id: newTenant!.id,
+          name: a.name,
+          role: a.role,
+          brain: a.brain,
+          status: "running",
+        }))
+      );
+
       return new Response(JSON.stringify({ tenant: newTenant, created: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
