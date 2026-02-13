@@ -19,13 +19,6 @@ function analyzeAd(data: Record<string, unknown>) {
   const roas = spend > 0 ? (revenue / spend).toFixed(2) : "N/A";
   const conversionRate = clicks > 0 ? ((conversions / clicks) * 100).toFixed(2) + "%" : "N/A";
 
-  const suggestions: string[] = [];
-  if (impressions > 0 && clicks / impressions < 0.01) suggestions.push("CTR < 1% – test new creatives and copy");
-  if (spend > 0 && revenue / spend < 1) suggestions.push("ROAS < 1 – campaign is unprofitable, review targeting");
-  if (clicks > 0 && conversions / clicks < 0.02) suggestions.push("CVR < 2% – optimize landing page or offer");
-  if (Number(cpc) > 5) suggestions.push("CPC > $5 – consider broader targeting or lower bids");
-  if (suggestions.length === 0) suggestions.push("Campaign metrics look strong!");
-
   const score = Math.min(100, Math.round(
     (impressions > 0 ? (clicks / impressions > 0.02 ? 25 : 10) : 0) +
     (spend > 0 ? (revenue / spend > 2 ? 25 : revenue / spend > 1 ? 15 : 5) : 0) +
@@ -33,7 +26,44 @@ function analyzeAd(data: Record<string, unknown>) {
     (conversions > 0 ? 25 : 0)
   ));
 
-  return { ctr, cpc, cpa, roas, conversion_rate: conversionRate, performance_score: score, suggestions };
+  return { ctr, cpc, cpa, roas, conversion_rate: conversionRate, performance_score: score };
+}
+
+async function getAiInsights(adData: Record<string, unknown>, metrics: Record<string, unknown>): Promise<string> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) return "AI insights unavailable.";
+
+  try {
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [
+          {
+            role: "system",
+            content: "You are a digital ads performance analyst specializing in Meta and Google Ads. Given campaign metrics, provide 3-5 concise, actionable optimization suggestions in Portuguese (BR). Include specific bid/budget/targeting recommendations. Respond as a JSON array of strings.",
+          },
+          {
+            role: "user",
+            content: `Campaign data: ${JSON.stringify(adData)}\nCalculated metrics: ${JSON.stringify(metrics)}`,
+          },
+        ],
+      }),
+    });
+
+    if (!res.ok) return "AI insights temporarily unavailable.";
+
+    const json = await res.json();
+    const content = json.choices?.[0]?.message?.content || "";
+    try {
+      return JSON.parse(content);
+    } catch {
+      return content;
+    }
+  } catch {
+    return "AI insights temporarily unavailable.";
+  }
 }
 
 Deno.serve(async (req) => {
@@ -68,7 +98,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Rate limiting
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
     const { count: usageCount } = await supabase
       .from("usage_logs")
@@ -97,7 +126,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    const analysis = analyzeAd(body);
+    const metrics = analyzeAd(body);
+    const ai_suggestions = await getAiInsights(body, metrics);
     const responseTime = Date.now() - startTime;
 
     await supabase.from("usage_logs").insert({
@@ -109,7 +139,7 @@ Deno.serve(async (req) => {
     await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", keyData.id);
 
     return new Response(
-      JSON.stringify({ input: { spend, impressions, clicks, conversions, revenue, platform }, analysis, response_time_ms: responseTime }),
+      JSON.stringify({ input: { spend, impressions, clicks, conversions, revenue, platform }, analysis: { ...metrics, ai_suggestions }, response_time_ms: responseTime }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
