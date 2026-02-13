@@ -1,56 +1,48 @@
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
 const plans = [
   {
     name: "Starter",
-    price: "$19",
-    period: "/mês",
-    limit: "100 validações/mês",
-    description: "Para começar a validar e testar integrações.",
+    price: "$29",
+    period: "/mo",
+    credits: "10,000 validations",
     features: [
-      "100 validações/mês",
-      "Validação básica de emails",
-      "Relatórios semanais",
-      "API Key para integração",
-      "Dashboard simplificado",
+      { label: "API access", included: true },
+      { label: "Dashboard analytics", included: true },
+      { label: "Email support", included: true },
+      { label: "Bulk support", included: false },
+      { label: "Enterprise SLA", included: false },
     ],
     highlighted: false,
   },
   {
-    name: "Pro",
-    price: "$49",
-    period: "/mês",
-    limit: "1.000 validações/mês",
-    description: "Para times que precisam de volume e insights.",
+    name: "Professional",
+    price: "$99",
+    period: "/mo",
+    credits: "100,000 validations",
     features: [
-      "1.000 validações/mês",
-      "Validação avançada de emails",
-      "Enriquecimento de dados",
-      "Relatórios detalhados",
-      "API Key completa",
-      "Dashboard completo",
-      "Suporte prioritário",
+      { label: "API access", included: true },
+      { label: "Dashboard analytics", included: true },
+      { label: "Priority support", included: true },
+      { label: "Bulk support", included: true },
+      { label: "Enterprise SLA", included: false },
     ],
     highlighted: true,
   },
   {
     name: "Enterprise",
-    price: "$199",
-    period: "/mês",
-    limit: "10.000 validações/mês",
-    description: "Para operações de alto volume e custom.",
+    price: "Custom",
+    period: "",
+    credits: "Unlimited validations",
     features: [
-      "10.000 validações/mês",
-      "Validação premium de emails",
-      "Enriquecimento e deduplicação avançada",
-      "Integração completa com CRM",
-      "API Key ilimitada",
-      "Dashboard customizável",
-      "Suporte dedicado 24/7",
-      "Onboarding e treinamento",
+      { label: "API access", included: true },
+      { label: "Dashboard analytics", included: true },
+      { label: "Dedicated support", included: true },
+      { label: "Bulk support", included: true },
+      { label: "Enterprise SLA", included: true },
     ],
     highlighted: false,
   },
@@ -58,61 +50,62 @@ const plans = [
 
 const Pricing = () => {
   return (
-    <section id="pricing" className="py-24 relative">
-      <div className="container px-6">
+    <section id="pricing" className="py-24 bg-card/20">
+      <div className="max-w-[1200px] mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-14"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-            Pricing <span className="text-gradient-accent">transparente</span>
-          </h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-4">Flexible Plans for Every Stage</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Comece com $19/mês e escale conforme sua necessidade.
+            Start free and scale as your validation needs grow.
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
           {plans.map((plan, i) => (
             <motion.div
               key={plan.name}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: i * 0.15 }}
+              transition={{ delay: i * 0.1 }}
               className={`relative rounded-xl border p-7 flex flex-col ${
                 plan.highlighted
-                  ? "border-primary/50 shadow-glow bg-gradient-card"
+                  ? "border-primary/40 shadow-glow bg-gradient-card"
                   : "border-border/50 bg-gradient-card"
               }`}
             >
               {plan.highlighted && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-semibold bg-primary text-primary-foreground px-3 py-1 rounded-full">
-                  Mais popular
+                  Most Popular
                 </div>
               )}
               <h3 className="font-semibold text-lg mb-1">{plan.name}</h3>
-              <p className="text-sm text-muted-foreground mb-5">{plan.description}</p>
+              <p className="text-xs text-muted-foreground mb-5">{plan.credits}</p>
               <div className="mb-6">
                 <span className="text-4xl font-bold">{plan.price}</span>
                 <span className="text-muted-foreground text-sm">{plan.period}</span>
               </div>
               <ul className="space-y-3 mb-8 flex-1">
                 {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2 text-sm">
-                    <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                    <span className="text-muted-foreground">{f}</span>
+                  <li key={f.label} className="flex items-center gap-2 text-sm">
+                    {f.included ? (
+                      <Check className="h-4 w-4 text-primary shrink-0" />
+                    ) : (
+                      <Minus className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                    )}
+                    <span className={f.included ? "text-muted-foreground" : "text-muted-foreground/40"}>
+                      {f.label}
+                    </span>
                   </li>
                 ))}
               </ul>
               <Link to="/auth">
-                <Button
-                  className="w-full"
-                  variant={plan.highlighted ? "default" : "outline"}
-                >
-                  Escolher {plan.name}
+                <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
+                  {plan.name === "Enterprise" ? "Contact Sales" : `Get ${plan.name}`}
                 </Button>
               </Link>
             </motion.div>
