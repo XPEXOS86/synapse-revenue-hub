@@ -1,0 +1,3 @@
+import InstitutionalPage from "./InstitutionalPage";
+const PrivacyPolicy = () => <InstitutionalPage category="Legal" title="Privacy Policy" headline="Privacy and Data Protection" content={["Xpex Systems AI respects user privacy and is committed to protecting customer data.","We collect only the minimum required information necessary to operate the validation service.","Email validation data is processed securely and is not sold or shared with third parties.","Users maintain control over their data and may request deletion in accordance with applicable regulations."]} />;
+export default PrivacyPolicy;
