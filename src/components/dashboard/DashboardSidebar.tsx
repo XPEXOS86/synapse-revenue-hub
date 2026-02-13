@@ -7,6 +7,7 @@ import {
   Settings,
   Brain,
   LogOut,
+  BookOpen,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
@@ -28,6 +29,7 @@ const mainItems = [
   { title: "Billing", url: "/dashboard/billing", icon: CreditCard },
   { title: "API Keys", url: "/dashboard/keys", icon: Key },
   { title: "Agents", url: "/dashboard/agents", icon: Activity },
+  { title: "API Docs", url: "/docs", icon: BookOpen },
 ];
 
 const bottomItems = [
