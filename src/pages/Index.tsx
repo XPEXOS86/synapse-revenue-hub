@@ -1,6 +1,7 @@
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import BrainGrid from "@/components/landing/BrainGrid";
+import EdFunkAgents from "@/components/landing/EdFunkAgents";
 import Integrations from "@/components/landing/Integrations";
 import CTA from "@/components/landing/CTA";
 import Footer from "@/components/landing/Footer";
@@ -12,6 +13,9 @@ const Index = () => {
       <Hero />
       <div id="brains">
         <BrainGrid />
+      </div>
+      <div id="agents">
+        <EdFunkAgents />
       </div>
       <div id="integrations">
         <Integrations />

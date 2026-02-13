@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Brain, ArrowRight } from "lucide-react";
+import { Brain, ArrowRight, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const CTA = () => {
   return (
@@ -14,17 +15,22 @@ const CTA = () => {
         >
           <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
           <div className="relative z-10">
-            <Brain className="h-12 w-12 text-primary mx-auto mb-6 animate-float" />
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <Brain className="h-10 w-10 text-primary animate-float" />
+              <Zap className="h-8 w-8 text-accent animate-float" style={{ animationDelay: "1s" }} />
+            </div>
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Pronto para monetizar com IA?
+              Pronto para o <span className="text-gradient-primary">Gayson</span>?
             </h2>
             <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-              Lance seu SaaS multinicho em dias, não meses. Agentes autônomos, billing e API — tudo incluso.
+              5 Brains, 6 EdFunk Agents, billing integrado e API gateway — tudo pronto para escalar seu negócio.
             </p>
-            <Button size="lg" className="h-13 px-8 text-base font-semibold shadow-glow">
-              Começar grátis
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+            <Link to="/dashboard">
+              <Button size="lg" className="h-13 px-8 text-base font-semibold shadow-glow">
+                Acessar agora
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </motion.div>
       </div>
