@@ -89,14 +89,18 @@ export function DashboardSidebar() {
             </SidebarMenuItem>
           ))}
           <SidebarMenuItem>
-            <SidebarMenuButton asChild tooltip="Sair">
-              <NavLink
-                to="/"
-                className="flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted/50 transition-colors"
+            <SidebarMenuButton tooltip="Sair">
+              <button
+                onClick={async () => {
+                  const { supabase } = await import("@/integrations/supabase/client");
+                  await supabase.auth.signOut();
+                  window.location.href = "/";
+                }}
+                className="flex items-center gap-3 w-full text-muted-foreground hover:text-destructive transition-colors"
               >
                 <LogOut className="h-4 w-4 shrink-0" />
                 <span>Sair</span>
-              </NavLink>
+              </button>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

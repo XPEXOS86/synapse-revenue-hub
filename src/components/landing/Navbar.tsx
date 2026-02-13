@@ -15,9 +15,11 @@ const Navbar = () => {
           <a href="/#agents" className="hover:text-foreground transition-colors">EdFunk Agents</a>
           <a href="/#integrations" className="hover:text-foreground transition-colors">Integrações</a>
         </div>
-        <Button size="sm" className="font-semibold">
-          Acessar
-        </Button>
+        <Link to="/auth">
+          <Button size="sm" className="font-semibold">
+            Acessar
+          </Button>
+        </Link>
       </div>
     </nav>
   );
