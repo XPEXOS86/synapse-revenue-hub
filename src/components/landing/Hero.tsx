@@ -20,31 +20,47 @@ const Hero = () => {
               Powered by Xpex Systems AI Infrastructure
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold tracking-tight leading-[1.1] mb-5">
-              Enterprise Email Intelligence Infrastructure
+              Reduza <span className="text-gradient-primary">bounce rates em 73%</span> antes de enviar
             </h1>
-            <p className="text-lg text-muted-foreground leading-relaxed mb-8 max-w-lg">
-              Advanced email validation, scoring and risk analysis platform built for scale, security and performance.
+            <p className="text-lg text-muted-foreground leading-relaxed mb-4 max-w-lg">
+              Valide, pontue e analise riscos de qualquer lista de emails em segundos. A infraestrutura de inteligência de email que protege sua reputação de remetente.
             </p>
+
+            {/* Supporting points */}
+            <ul className="space-y-2 mb-8">
+              {[
+                "API com resposta em menos de 50ms",
+                "Score de confiança 0-100 com análise de risco",
+                "Processamento em massa de até 50k emails por job",
+              ].map((point) => (
+                <li key={point} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                  {point}
+                </li>
+              ))}
+            </ul>
+
             <div className="flex flex-wrap gap-3">
               <Link to="/auth">
                 <Button size="lg" className="h-12 px-7 font-semibold shadow-glow gap-2">
-                  Start Free Validation
+                  Começar Grátis
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/docs">
                 <Button size="lg" variant="outline" className="h-12 px-7 font-semibold gap-2">
                   <FileText className="h-4 w-4" />
-                  View API Documentation
+                  Ver API Docs
                 </Button>
               </Link>
               <Link to="/enterprise">
                 <Button size="lg" variant="ghost" className="h-12 px-7 font-semibold gap-2 text-muted-foreground">
                   <Building2 className="h-4 w-4" />
-                  Talk to Enterprise Sales
+                  Enterprise Sales
                 </Button>
               </Link>
             </div>
+            <p className="text-xs text-muted-foreground mt-3">Sem cartão de crédito · Setup em 2 minutos</p>
           </motion.div>
 
           {/* Right - Live Dashboard Preview */}

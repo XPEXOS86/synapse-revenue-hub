@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
@@ -16,24 +16,28 @@ const CTA = () => {
           <div className="absolute inset-0 bg-gradient-glow pointer-events-none" />
           <div className="relative z-10">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-              Ready to Clean and Optimize Your Email Data?
+              Proteja sua reputação de remetente <span className="text-gradient-primary">hoje</span>
             </h2>
             <p className="text-muted-foreground mb-8 max-w-lg mx-auto">
-              Start validating in minutes. No credit card required.
+              Comece a validar em minutos. Sem cartão de crédito. Sem compromisso.
             </p>
             <div className="flex flex-wrap justify-center gap-3">
               <Link to="/auth">
                 <Button size="lg" className="h-12 px-8 font-semibold shadow-glow gap-2">
-                  Start Free
+                  Criar conta agora
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/enterprise">
                 <Button size="lg" variant="outline" className="h-12 px-8 font-semibold">
-                  Request Enterprise Demo
+                  Falar com Enterprise Sales
                 </Button>
               </Link>
             </div>
+            <p className="text-xs text-muted-foreground mt-4 flex items-center justify-center gap-1.5">
+              <Clock className="w-3 h-3" />
+              Leva menos de 2 minutos para começar
+            </p>
           </div>
         </motion.div>
       </div>
