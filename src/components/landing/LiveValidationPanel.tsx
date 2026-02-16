@@ -70,18 +70,24 @@ const LiveValidationPanel = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={{ visible: { transition: { staggerChildren: 0.06 } } }}
+                className="grid grid-cols-2 gap-3"
+              >
                 {checks.map((c) => (
-                  <div key={c.label} className="flex items-center gap-2 text-sm">
+                  <motion.div key={c.label} variants={{ hidden: { opacity: 0, x: -10 }, visible: { opacity: 1, x: 0, transition: { duration: 0.3 } } }} className="flex items-center gap-2 text-sm">
                     {c.ok ? (
                       <CheckCircle className="w-4 h-4 text-primary shrink-0" />
                     ) : (
                       <XCircle className="w-4 h-4 text-destructive shrink-0" />
                     )}
                     <span className="text-muted-foreground">{c.label}</span>
-                  </div>
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             </div>
 
             {/* Score Distribution sidebar */}

@@ -71,14 +71,17 @@ const Testimonials = () => {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
-          {testimonials.map((t, i) => (
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+          className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto"
+        >
+          {testimonials.map((t) => (
             <motion.div
               key={t.name}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.08 }}
+              variants={{ hidden: { opacity: 0, y: 30 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}
               className="relative rounded-xl border border-border/50 bg-gradient-card p-6 flex flex-col gap-4 group hover:border-primary/30 transition-colors"
             >
               <Quote className="w-8 h-8 text-primary/20 absolute top-4 right-4" />
@@ -104,7 +107,7 @@ const Testimonials = () => {
               </div>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

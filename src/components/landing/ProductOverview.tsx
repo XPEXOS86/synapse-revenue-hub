@@ -35,14 +35,17 @@ const ProductOverview = () => {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {features.map((f, i) => (
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
+          className="grid md:grid-cols-3 gap-6"
+        >
+          {features.map((f) => (
             <motion.div
               key={f.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
+              variants={{ hidden: { opacity: 0, y: 25 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}
               className="rounded-xl border border-border/50 bg-gradient-card p-7"
             >
               <f.icon className="w-8 h-8 text-primary mb-4" />
@@ -57,7 +60,7 @@ const ProductOverview = () => {
               </ul>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

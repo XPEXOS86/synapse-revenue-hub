@@ -41,14 +41,17 @@ const ProblemSection = () => {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6">
-          {problems.map((p, i) => (
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
+          className="grid md:grid-cols-3 gap-6"
+        >
+          {problems.map((p) => (
             <motion.div
               key={p.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
+              variants={{ hidden: { opacity: 0, y: 25 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5 } } }}
               className="rounded-xl border border-destructive/10 bg-gradient-card p-7"
             >
               <div className="w-10 h-10 rounded-lg bg-destructive/10 flex items-center justify-center mb-4">
@@ -58,7 +61,7 @@ const ProblemSection = () => {
               <p className="text-sm text-muted-foreground leading-relaxed">{p.desc}</p>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

@@ -29,21 +29,24 @@ const SolutionSection = () => {
               O Gold Mail Validator vai além da sintaxe. Nosso motor proprietário cruza validação MX, handshake SMTP, análise de reputação e detecção de padrões de risco para entregar um score de confiança preciso em cada email.
             </p>
 
-            <div className="grid grid-cols-2 gap-4">
-              {pillars.map((p, i) => (
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+              className="grid grid-cols-2 gap-4"
+            >
+              {pillars.map((p) => (
                 <motion.div
                   key={p.label}
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: i * 0.08 }}
+                  variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }}
                   className="flex items-center gap-3 rounded-lg border border-border/50 bg-background p-3"
                 >
                   <p.icon className="w-5 h-5 text-primary shrink-0" />
                   <span className="text-sm text-muted-foreground">{p.label}</span>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </motion.div>
 
           <motion.div
