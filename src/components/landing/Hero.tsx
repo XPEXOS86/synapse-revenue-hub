@@ -17,7 +17,7 @@ const Hero = () => {
             transition={{ duration: 0.7 }}
           >
             <p className="text-xs tracking-widest uppercase text-muted-foreground mb-4">
-              Powered by Xpex Systems AI Infrastructure
+              Powered by GOLD EMAIL AI Infrastructure
             </p>
             <h1 className="text-4xl sm:text-5xl lg:text-[3.4rem] font-extrabold tracking-tight leading-[1.1] mb-5">
               Reduza <span className="text-gradient-primary">bounce rates em 73%</span> antes de enviar
