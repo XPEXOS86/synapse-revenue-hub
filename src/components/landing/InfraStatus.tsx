@@ -14,16 +14,17 @@ const InfraStatus = () => {
     <section className="border-y border-border/30 py-6 bg-card/30">
       <div className="max-w-[1200px] mx-auto px-6">
         <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
+          initial="hidden"
+          whileInView="visible"
           viewport={{ once: true }}
+          variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
           className="flex flex-wrap justify-center gap-x-10 gap-y-4"
         >
           {items.map((item) => (
-            <div key={item.label} className="flex items-center gap-2 text-sm text-muted-foreground">
+            <motion.div key={item.label} variants={{ hidden: { opacity: 0, y: 8 }, visible: { opacity: 1, y: 0, transition: { duration: 0.3 } } }} className="flex items-center gap-2 text-sm text-muted-foreground">
               <item.icon className="w-4 h-4 text-primary shrink-0" />
               <span>{item.label}</span>
-            </div>
+            </motion.div>
           ))}
         </motion.div>
       </div>

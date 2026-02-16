@@ -26,14 +26,17 @@ const SecuritySection = () => {
           </p>
         </motion.div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {items.map((item, i) => (
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true }}
+          variants={{ visible: { transition: { staggerChildren: 0.08 } } }}
+          className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5"
+        >
+          {items.map((item) => (
             <motion.div
               key={item.title}
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.06 }}
+              variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }}
               className="rounded-xl border border-border/50 bg-gradient-card p-6"
             >
               <item.icon className="w-6 h-6 text-primary mb-3" />
@@ -41,7 +44,7 @@ const SecuritySection = () => {
               <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );

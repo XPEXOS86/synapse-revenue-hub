@@ -54,6 +54,13 @@ const ObjectionHandling = () => {
         >
           <Accordion type="single" collapsible className="space-y-3">
             {faqs.map((faq, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 15 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.08 }}
+              >
               <AccordionItem
                 key={i}
                 value={`item-${i}`}
@@ -66,6 +73,7 @@ const ObjectionHandling = () => {
                   {faq.a}
                 </AccordionContent>
               </AccordionItem>
+              </motion.div>
             ))}
           </Accordion>
         </motion.div>
