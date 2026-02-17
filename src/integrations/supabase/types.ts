@@ -327,6 +327,150 @@ export type Database = {
           },
         ]
       }
+      invoices: {
+        Row: {
+          amount_due_cents: number | null
+          amount_paid_cents: number | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          period_end: string | null
+          period_start: string | null
+          status: string | null
+          stripe_invoice_id: string | null
+          subscription_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          amount_due_cents?: number | null
+          amount_paid_cents?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          stripe_invoice_id?: string | null
+          subscription_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          amount_due_cents?: number | null
+          amount_paid_cents?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          status?: string | null
+          stripe_invoice_id?: string | null
+          subscription_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invoices_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount_cents: number | null
+          created_at: string | null
+          id: string
+          invoice_id: string | null
+          paid_at: string | null
+          status: string | null
+          stripe_payment_intent_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          amount_cents?: number | null
+          created_at?: string | null
+          id?: string
+          invoice_id?: string | null
+          paid_at?: string | null
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          amount_cents?: number | null
+          created_at?: string | null
+          id?: string
+          invoice_id?: string | null
+          paid_at?: string | null
+          status?: string | null
+          stripe_payment_intent_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          active: boolean | null
+          created_at: string | null
+          id: string
+          included_credits: number
+          monthly_price_cents: number
+          name: string
+          overage_price_cents: number | null
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          version: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          included_credits: number
+          monthly_price_cents: number
+          name: string
+          overage_price_cents?: number | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          version?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          created_at?: string | null
+          id?: string
+          included_credits?: number
+          monthly_price_cents?: number
+          name?: string
+          overage_price_cents?: number | null
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          version?: number | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -354,50 +498,87 @@ export type Database = {
         }
         Relationships: []
       }
+      stripe_events: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          event_type: string
+          id: string
+          payload: Json
+          processed: boolean | null
+          stripe_event_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type: string
+          id?: string
+          payload?: Json
+          processed?: boolean | null
+          stripe_event_id: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed?: boolean | null
+          stripe_event_id?: string
+        }
+        Relationships: []
+      }
       subscriptions: {
         Row: {
-          cancel_at: string | null
-          created_at: string
+          cancel_at_period_end: boolean | null
+          created_at: string | null
           current_period_end: string | null
           current_period_start: string | null
           id: string
-          plan: string
+          plan_id: string | null
           status: string
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           tenant_id: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
-          cancel_at?: string | null
-          created_at?: string
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
-          plan?: string
+          plan_id?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           tenant_id: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
-          cancel_at?: string | null
-          created_at?: string
+          cancel_at_period_end?: boolean | null
+          created_at?: string | null
           current_period_end?: string | null
           current_period_start?: string | null
           id?: string
-          plan?: string
+          plan_id?: string | null
           status?: string
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           tenant_id?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "subscriptions_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -498,6 +679,50 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      usage_aggregations: {
+        Row: {
+          created_at: string | null
+          id: string
+          overage_units: number | null
+          period_end: string
+          period_start: string
+          processed: boolean | null
+          tenant_id: string
+          total_bulk_emails: number | null
+          total_requests: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          overage_units?: number | null
+          period_end: string
+          period_start: string
+          processed?: boolean | null
+          tenant_id: string
+          total_bulk_emails?: number | null
+          total_requests?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          overage_units?: number | null
+          period_end?: string
+          period_start?: string
+          processed?: boolean | null
+          tenant_id?: string
+          total_bulk_emails?: number | null
+          total_requests?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usage_aggregations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       usage_logs: {
         Row: {
