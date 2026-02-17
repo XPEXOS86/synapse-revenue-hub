@@ -366,6 +366,7 @@ export type Database = {
           event_type: string
           function_name: string | null
           id: string
+          idempotency_key: string | null
           payload: Json
           request_id: string
           source: string
@@ -380,6 +381,7 @@ export type Database = {
           event_type: string
           function_name?: string | null
           id?: string
+          idempotency_key?: string | null
           payload?: Json
           request_id: string
           source: string
@@ -394,6 +396,7 @@ export type Database = {
           event_type?: string
           function_name?: string | null
           id?: string
+          idempotency_key?: string | null
           payload?: Json
           request_id?: string
           source?: string

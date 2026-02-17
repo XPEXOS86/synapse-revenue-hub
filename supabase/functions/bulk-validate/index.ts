@@ -279,7 +279,11 @@ Deno.serve(async (req) => {
       try {
         await fetch(webhookUrl, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-request-id": ctx.requestId,
+            "x-correlation-id": ctx.correlationId,
+          },
           body: JSON.stringify(summary),
         });
       } catch { /* silent */ }
