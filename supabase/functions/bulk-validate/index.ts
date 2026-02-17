@@ -5,38 +5,6 @@ function validateEmailFormat(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-const disposableDomains = new Set([
-  "mailinator.com", "guerrillamail.com", "tempmail.com", "throwaway.email",
-  "yopmail.com", "sharklasers.com", "guerrillamailblock.com", "grr.la",
-  "dispostable.com", "maildrop.cc", "10minutemail.com", "trashmail.com",
-]);
-
-const roleAddresses = new Set([
-  "admin", "info", "support", "noreply", "no-reply", "postmaster", "webmaster",
-]);
-
-function scoreEmail(email: string) {
-  const domain = email.split("@")[1]?.toLowerCase() || "";
-  const local = email.split("@")[0]?.toLowerCase() || "";
-  const checks = {
-    valid_format: validateEmailFormat(email),
-    has_mx_likely: !["example.com", "test.com", "localhost"].includes(domain),
-    not_disposable: !disposableDomains.has(domain),
-    not_role_based: !roleAddresses.has(local),
-    domain_length_ok: domain.length >= 4 && domain.length <= 255,
-  };
-  const passed = Object.values(checks).filter(Boolean).length;
-  const score = Math.round((passed / Object.keys(checks).length) * 100);
-  const risk = score >= 80 ? "low" : score >= 50 ? "medium" : "high";
-  const status = !checks.valid_format ? "invalid"
-    : !checks.not_disposable ? "temporary"
-    : !checks.has_mx_likely ? "invalid"
-    : risk === "high" ? "risky"
-    : risk === "medium" ? "catch-all"
-    : "valid";
-  return { score, risk, status, checks, disposable: !checks.not_disposable, role_based: !checks.not_role_based };
-}
-
 function parseEmails(text: string): string[] {
   return text
     .split(/[\n\r,;]+/)
@@ -63,6 +31,7 @@ Deno.serve(async (req) => {
   };
 
   try {
+    // --- Auth ---
     const apiKey = req.headers.get("x-api-key");
     const authHeader = req.headers.get("authorization");
 
@@ -119,7 +88,7 @@ Deno.serve(async (req) => {
     ctx.tenantId = tenantId;
     ctx.actorUserId = userId;
 
-    // GET: Check job progress
+    // --- GET: Check job progress ---
     const url = new URL(req.url);
     const jobId = url.searchParams.get("job_id");
 
@@ -140,8 +109,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Log started
-    await logSystemEvent(ctx, "bulk_validation_started", "api", "started");
+    // --- POST: Create job + enqueue emails ---
+    await logSystemEvent(ctx, "bulk_validation_queued", "api", "started");
 
     const contentType = req.headers.get("content-type") || "";
     let emails: string[] = [];
@@ -186,6 +155,7 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Create job with status=pending
     const { data: job, error: jobError } = await supabase
       .from("bulk_jobs")
       .insert({
@@ -194,7 +164,7 @@ Deno.serve(async (req) => {
         file_name: fileName,
         file_format: fileFormat,
         total_emails: emails.length,
-        status: "processing",
+        status: "pending",
         webhook_url: webhookUrl,
         started_at: new Date().toISOString(),
       })
@@ -208,91 +178,43 @@ Deno.serve(async (req) => {
       });
     }
 
-    structuredLog("info", ctx, `Bulk job created: ${job.id}, ${emails.length} emails`);
-
-    const BATCH_SIZE = 100;
-    let validCount = 0, invalidCount = 0, catchAllCount = 0, riskyCount = 0, processed = 0;
-
-    for (let i = 0; i < emails.length; i += BATCH_SIZE) {
-      const batch = emails.slice(i, i + BATCH_SIZE);
-      const results = batch.map((email) => {
-        const result = scoreEmail(email);
-        if (result.status === "valid") validCount++;
-        else if (result.status === "invalid") invalidCount++;
-        else if (result.status === "catch-all") catchAllCount++;
-        else riskyCount++;
-        return {
-          tenant_id: tenantId!,
-          bulk_job_id: job.id,
-          api_key_id: apiKeyId,
-          email,
-          status: result.status,
-          score: result.score,
-          mx_check: result.checks.has_mx_likely,
-          smtp_check: false,
-          disposable: result.disposable,
-          role_based: result.role_based,
-          free_provider: false,
-          domain_reputation: result.risk as "low" | "medium" | "high",
-          checks: result.checks,
-        };
-      });
-      await supabase.from("validation_results").insert(results);
-      processed += batch.length;
-      await supabase.from("bulk_jobs").update({
-        processed, valid_count: validCount, invalid_count: invalidCount,
-        catch_all_count: catchAllCount, risky_count: riskyCount,
-      }).eq("id", job.id);
+    // Enqueue emails into bulk_inputs in batches of 500
+    const INPUT_BATCH = 500;
+    for (let i = 0; i < emails.length; i += INPUT_BATCH) {
+      const batch = emails.slice(i, i + INPUT_BATCH).map((email) => ({
+        tenant_id: tenantId!,
+        bulk_job_id: job.id,
+        email,
+      }));
+      await supabase.from("bulk_inputs").insert(batch);
     }
 
-    await supabase.from("bulk_jobs").update({
-      status: "completed", processed,
-      valid_count: validCount, invalid_count: invalidCount,
-      catch_all_count: catchAllCount, risky_count: riskyCount,
-      completed_at: new Date().toISOString(),
-    }).eq("id", job.id);
-
+    // Log usage
     await supabase.from("usage_logs").insert({
       tenant_id: tenantId!,
       api_key_id: apiKeyId,
       endpoint: "/bulk-validate",
       brain: "email-validation",
-      status_code: 200,
+      status_code: 202,
       response_time_ms: Date.now() - ctx.startTime,
       request_id: ctx.requestId,
     });
 
-    const summary = {
+    structuredLog("info", ctx, `Bulk job queued: ${job.id}, ${emails.length} emails`);
+    await logSystemEvent(ctx, "bulk_validation_queued", "api", "completed", {
+      payload: { job_id: job.id, total_emails: emails.length } as unknown as Record<string, unknown>,
+    });
+
+    return new Response(JSON.stringify({
       job_id: job.id,
-      status: "completed",
+      status: "pending",
       total_emails: emails.length,
-      valid: validCount,
-      invalid: invalidCount,
-      catch_all: catchAllCount,
-      risky: riskyCount,
-      average_score: Math.round(
-        emails.reduce((sum, e) => sum + scoreEmail(e).score, 0) / emails.length
-      ),
-    };
+      message: "Job queued for processing",
+    }), {
+      status: 202,
+      headers: traceResponseHeaders(ctx),
+    });
 
-    if (webhookUrl) {
-      try {
-        await fetch(webhookUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-request-id": ctx.requestId,
-            "x-correlation-id": ctx.correlationId,
-          },
-          body: JSON.stringify(summary),
-        });
-      } catch { /* silent */ }
-    }
-
-    await logSystemEvent(ctx, "bulk_validation_completed", "api", "completed", { payload: summary as unknown as Record<string, unknown> });
-    structuredLog("info", ctx, "Bulk validation completed", summary);
-
-    return new Response(JSON.stringify(summary), { status: 200, headers: traceResponseHeaders(ctx) });
   } catch (err) {
     structuredLog("error", ctx, "Bulk validation failed", { error: String(err) });
     await logSystemEvent(ctx, "bulk_validation_failed", "api", "failed", { errorMessage: String(err) });

@@ -162,6 +162,41 @@ export type Database = {
           },
         ]
       }
+      bulk_inputs: {
+        Row: {
+          bulk_job_id: string
+          created_at: string | null
+          email: string
+          id: string
+          processed: boolean | null
+          tenant_id: string
+        }
+        Insert: {
+          bulk_job_id: string
+          created_at?: string | null
+          email: string
+          id?: string
+          processed?: boolean | null
+          tenant_id: string
+        }
+        Update: {
+          bulk_job_id?: string
+          created_at?: string | null
+          email?: string
+          id?: string
+          processed?: boolean | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bulk_inputs_bulk_job_id_fkey"
+            columns: ["bulk_job_id"]
+            isOneToOne: false
+            referencedRelation: "bulk_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bulk_jobs: {
         Row: {
           catch_all_count: number
@@ -172,7 +207,11 @@ export type Database = {
           file_name: string
           id: string
           invalid_count: number
+          last_error: string | null
+          locked_at: string | null
           processed: number
+          processing_completed_at: string | null
+          processing_started_at: string | null
           risky_count: number
           started_at: string | null
           status: string
@@ -182,6 +221,7 @@ export type Database = {
           user_id: string
           valid_count: number
           webhook_url: string | null
+          worker_id: string | null
         }
         Insert: {
           catch_all_count?: number
@@ -192,7 +232,11 @@ export type Database = {
           file_name: string
           id?: string
           invalid_count?: number
+          last_error?: string | null
+          locked_at?: string | null
           processed?: number
+          processing_completed_at?: string | null
+          processing_started_at?: string | null
           risky_count?: number
           started_at?: string | null
           status?: string
@@ -202,6 +246,7 @@ export type Database = {
           user_id: string
           valid_count?: number
           webhook_url?: string | null
+          worker_id?: string | null
         }
         Update: {
           catch_all_count?: number
@@ -212,7 +257,11 @@ export type Database = {
           file_name?: string
           id?: string
           invalid_count?: number
+          last_error?: string | null
+          locked_at?: string | null
           processed?: number
+          processing_completed_at?: string | null
+          processing_started_at?: string | null
           risky_count?: number
           started_at?: string | null
           status?: string
@@ -222,6 +271,7 @@ export type Database = {
           user_id?: string
           valid_count?: number
           webhook_url?: string | null
+          worker_id?: string | null
         }
         Relationships: [
           {
