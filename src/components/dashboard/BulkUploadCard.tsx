@@ -94,8 +94,6 @@ const BulkUploadCard = () => {
         }),
       });
 
-      setProgress(90);
-
       const data = await res.json();
       if (!res.ok) {
         toast.error(data.error || "Erro ao processar");
@@ -104,10 +102,54 @@ const BulkUploadCard = () => {
         return;
       }
 
-      setResult(data);
-      setProgress(100);
-      toast.success(`${data.total_emails} emails validados!`);
-      setFile(null);
+      // Job queued - poll for completion
+      setProgress(50);
+      toast.info(`Job criado! Processando ${data.total_emails} emails...`);
+
+      const jobId = data.job_id;
+      let completed = false;
+      for (let attempt = 0; attempt < 120; attempt++) {
+        await new Promise((r) => setTimeout(r, 3000));
+        const pollRes = await fetch(
+          `${SUPABASE_URL}/functions/v1/bulk-validate?job_id=${jobId}`,
+          {
+            headers: { "Authorization": `Bearer ${session.access_token}` },
+          }
+        );
+        if (!pollRes.ok) continue;
+        const job = await pollRes.json();
+        const pct = job.total_emails > 0
+          ? Math.round(50 + (job.processed / job.total_emails) * 45)
+          : 50;
+        setProgress(Math.min(pct, 95));
+
+        if (job.status === "completed") {
+          setResult({
+            job_id: job.id,
+            status: "completed",
+            total_emails: job.total_emails,
+            valid: job.valid_count,
+            invalid: job.invalid_count,
+            catch_all: job.catch_all_count,
+            risky: job.risky_count,
+            average_score: 0,
+          });
+          setProgress(100);
+          toast.success(`${job.total_emails} emails validados!`);
+          setFile(null);
+          completed = true;
+          break;
+        } else if (job.status === "failed") {
+          toast.error(job.last_error || "Job falhou");
+          setProgress(0);
+          completed = true;
+          break;
+        }
+      }
+
+      if (!completed) {
+        toast.info("Job ainda em processamento. Verifique depois.");
+      }
     } catch {
       toast.error("Erro de conexão");
       setProgress(0);
