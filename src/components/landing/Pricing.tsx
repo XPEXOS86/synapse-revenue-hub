@@ -6,43 +6,46 @@ import { Link } from "react-router-dom";
 const plans = [
   {
     name: "Starter",
-    price: "$29",
+    price: "$49",
     period: "/mo",
-    credits: "10,000 validations",
+    credits: "15,000 credits included",
+    overage: "$5 / 1,000 extra credits",
     features: [
-      { label: "API access", included: true },
-      { label: "Dashboard analytics", included: true },
-      { label: "Email support", included: true },
-      { label: "Bulk support", included: false },
-      { label: "Enterprise SLA", included: false },
+      { label: "Access to Validate", included: true },
+      { label: "Basic API Access", included: true },
+      { label: "Email Support", included: true },
+      { label: "Webhook Access", included: false },
+      { label: "Advanced Analytics", included: false },
     ],
     highlighted: false,
   },
   {
-    name: "Professional",
-    price: "$99",
+    name: "Growth",
+    price: "$149",
     period: "/mo",
-    credits: "100,000 validations",
+    credits: "75,000 credits included",
+    overage: "$4 / 1,000 extra credits",
     features: [
-      { label: "API access", included: true },
-      { label: "Dashboard analytics", included: true },
-      { label: "Priority support", included: true },
-      { label: "Bulk support", included: true },
-      { label: "Enterprise SLA", included: false },
+      { label: "Validate + Automate", included: true },
+      { label: "Priority API Access", included: true },
+      { label: "Webhook Access", included: true },
+      { label: "Priority Support", included: true },
+      { label: "Advanced Analytics", included: false },
     ],
     highlighted: true,
   },
   {
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    credits: "Unlimited validations",
+    name: "Scale",
+    price: "$399",
+    period: "/mo",
+    credits: "250,000 credits included",
+    overage: "$3 / 1,000 extra credits",
     features: [
-      { label: "API access", included: true },
-      { label: "Dashboard analytics", included: true },
-      { label: "Dedicated support", included: true },
-      { label: "Bulk support", included: true },
-      { label: "Enterprise SLA", included: true },
+      { label: "All Modules Access", included: true },
+      { label: "Advanced Analytics", included: true },
+      { label: "Dedicated Rate Limits", included: true },
+      { label: "Priority SLA", included: true },
+      { label: "Custom Integrations", included: true },
     ],
     highlighted: false,
   },
@@ -60,7 +63,7 @@ const Pricing = () => {
         >
           <h2 className="text-3xl sm:text-4xl font-bold mb-4">Flexible Plans for Every Stage</h2>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Start free and scale as your validation needs grow.
+            Start with what you need and scale as your operations grow. All plans include credit-based usage.
           </p>
         </motion.div>
 
@@ -87,7 +90,8 @@ const Pricing = () => {
                 </div>
               )}
               <h3 className="font-semibold text-lg mb-1">{plan.name}</h3>
-              <p className="text-xs text-muted-foreground mb-5">{plan.credits}</p>
+              <p className="text-xs text-muted-foreground mb-1">{plan.credits}</p>
+              <p className="text-xs text-muted-foreground/60 mb-5">{plan.overage}</p>
               <div className="mb-6">
                 <span className="text-4xl font-bold">{plan.price}</span>
                 <span className="text-muted-foreground text-sm">{plan.period}</span>
@@ -106,13 +110,29 @@ const Pricing = () => {
                   </li>
                 ))}
               </ul>
-              <Link to={plan.name === "Enterprise" ? "/enterprise" : "/auth"}>
+              <Link to="/auth">
                 <Button className="w-full" variant={plan.highlighted ? "default" : "outline"}>
-                  {plan.name === "Enterprise" ? "Contact Sales" : `Get ${plan.name}`}
+                  Get {plan.name}
                 </Button>
               </Link>
             </motion.div>
           ))}
+        </motion.div>
+
+        {/* Enterprise */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-10 max-w-4xl mx-auto rounded-xl border border-border/50 bg-gradient-card p-7 text-center"
+        >
+          <h3 className="font-semibold text-lg mb-2">Enterprise</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Dedicated infrastructure, custom SLA, multi-region deployment, and an account manager.
+          </p>
+          <Link to="/enterprise">
+            <Button variant="outline">Contact Sales</Button>
+          </Link>
         </motion.div>
       </div>
     </section>

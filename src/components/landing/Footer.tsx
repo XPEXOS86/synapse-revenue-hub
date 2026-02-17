@@ -44,10 +44,10 @@ const Footer = () => {
           <motion.div variants={{ hidden: { opacity: 0, y: 15 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }} className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <XpexLogo className="w-5 h-5" />
-              <span className="font-display font-bold text-sm">GOLD EMAIL AI</span>
+              <span className="font-display font-bold text-sm">XPEX</span>
             </div>
             <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
-              Enterprise email intelligence infrastructure.
+              Operational AI infrastructure for global businesses.
             </p>
           </motion.div>
           {columns.map((col) => (
@@ -67,7 +67,7 @@ const Footer = () => {
         </motion.div>
         <div className="border-t border-border/30 pt-6">
           <p className="text-xs text-muted-foreground text-center">
-            © 2026 GOLD EMAIL AI. All rights reserved.
+            © 2026 XPEX Systems AI. All rights reserved.
           </p>
         </div>
       </div>
