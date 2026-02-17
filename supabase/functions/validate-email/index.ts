@@ -1,14 +1,8 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders, extractTraceHeaders, getSupabaseAdmin, logSystemEvent, structuredLog, traceResponseHeaders } from "../_shared/observability.ts";
+import type { RequestContext } from "../_shared/observability.ts";
 
 function validateEmailFormat(email: string) {
-  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return regex.test(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function getDisposableDomains(): string[] {
@@ -19,7 +13,7 @@ function getDisposableDomains(): string[] {
   ];
 }
 
-function scoreEmail(email: string): { score: number; risk: string; checks: Record<string, boolean> } {
+function scoreEmail(email: string) {
   const domain = email.split("@")[1]?.toLowerCase() || "";
   const checks = {
     valid_format: validateEmailFormat(email),
@@ -30,11 +24,9 @@ function scoreEmail(email: string): { score: number; risk: string; checks: Recor
     ),
     domain_length_ok: domain.length >= 4 && domain.length <= 255,
   };
-
   const passed = Object.values(checks).filter(Boolean).length;
   const score = Math.round((passed / Object.keys(checks).length) * 100);
   const risk = score >= 80 ? "low" : score >= 50 ? "medium" : "high";
-
   return { score, risk, checks };
 }
 
@@ -43,26 +35,29 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const startTime = Date.now();
+  const supabaseAdmin = getSupabaseAdmin();
+  const { requestId, correlationId } = extractTraceHeaders(req);
+  const ctx: RequestContext = {
+    requestId,
+    correlationId,
+    tenantId: null,
+    actorUserId: null,
+    functionName: "validate-email",
+    supabaseAdmin,
+    startTime: Date.now(),
+  };
 
   try {
-    // Authenticate via API key header
     const apiKey = req.headers.get("x-api-key");
     if (!apiKey) {
       return new Response(JSON.stringify({ error: "Missing x-api-key header" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: traceResponseHeaders(ctx),
       });
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
-
-    // Validate API key
     const keyPrefix = apiKey.substring(0, 8);
-    const { data: keyData, error: keyError } = await supabase
+    const { data: keyData, error: keyError } = await supabaseAdmin
       .from("api_keys")
       .select("id, tenant_id, brain, rate_limit, is_active")
       .eq("key_prefix", keyPrefix)
@@ -73,30 +68,36 @@ Deno.serve(async (req) => {
     if (keyError || !keyData) {
       return new Response(JSON.stringify({ error: "Invalid API key" }), {
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: traceResponseHeaders(ctx),
       });
     }
 
-    // Rate limiting: count requests in last hour
+    ctx.tenantId = keyData.tenant_id;
+
+    // Log started
+    await logSystemEvent(ctx, "email_validation_started", "api", "started");
+
+    // Rate limiting
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    const { count: usageCount } = await supabase
+    const { count: usageCount } = await supabaseAdmin
       .from("usage_logs")
       .select("id", { count: "exact", head: true })
       .eq("api_key_id", keyData.id)
       .gte("created_at", oneHourAgo);
 
     if ((usageCount ?? 0) >= (keyData.rate_limit ?? 1000)) {
+      await logSystemEvent(ctx, "email_validation_rate_limited", "api", "failed", { errorMessage: "Rate limit exceeded" });
       return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again later." }), {
         status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json", "Retry-After": "3600" },
+        headers: { ...traceResponseHeaders(ctx), "Retry-After": "3600" },
       });
     }
 
-    // Check brain access
     if (keyData.brain !== "all" && keyData.brain !== "email-validation") {
+      await logSystemEvent(ctx, "email_validation_unauthorized", "api", "failed", { errorMessage: "Brain not authorized" });
       return new Response(JSON.stringify({ error: "API key not authorized for this brain" }), {
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: traceResponseHeaders(ctx),
       });
     }
 
@@ -106,38 +107,43 @@ Deno.serve(async (req) => {
     if (!email || typeof email !== "string") {
       return new Response(JSON.stringify({ error: "Missing 'email' field" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: traceResponseHeaders(ctx),
       });
     }
 
     const result = scoreEmail(email);
-    const responseTime = Date.now() - startTime;
+    const responseTime = Date.now() - ctx.startTime;
 
-    // Log usage
-    await supabase.from("usage_logs").insert({
+    // Log usage with request_id
+    await supabaseAdmin.from("usage_logs").insert({
       tenant_id: keyData.tenant_id,
       api_key_id: keyData.id,
       endpoint: "/validate-email",
       brain: "email-validation",
       status_code: 200,
       response_time_ms: responseTime,
+      request_id: ctx.requestId,
     });
 
-    // Update last used
-    await supabase.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", keyData.id);
+    await supabaseAdmin.from("api_keys").update({ last_used_at: new Date().toISOString() }).eq("id", keyData.id);
+
+    // Log completed
+    await logSystemEvent(ctx, "email_validation_completed", "api", "completed", {
+      payload: { email, score: result.score, risk: result.risk },
+    });
+
+    structuredLog("info", ctx, "Email validation completed", { email, score: result.score });
 
     return new Response(
-      JSON.stringify({
-        email,
-        ...result,
-        response_time_ms: responseTime,
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ email, ...result, response_time_ms: responseTime }),
+      { status: 200, headers: traceResponseHeaders(ctx) }
     );
   } catch (err) {
+    structuredLog("error", ctx, "Email validation failed", { error: String(err) });
+    await logSystemEvent(ctx, "email_validation_failed", "api", "failed", { errorMessage: String(err) });
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: traceResponseHeaders(ctx),
     });
   }
 });

@@ -1,67 +1,70 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders, extractTraceHeaders, getSupabaseAdmin, logSystemEvent, structuredLog, traceResponseHeaders } from "../_shared/observability.ts";
+import type { RequestContext } from "../_shared/observability.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseAdmin = getSupabaseAdmin();
+  const { requestId, correlationId } = extractTraceHeaders(req);
+  const ctx: RequestContext = {
+    requestId,
+    correlationId,
+    tenantId: null,
+    actorUserId: null,
+    functionName: "agent-heartbeat",
+    supabaseAdmin,
+    startTime: Date.now(),
+  };
+
   try {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: traceResponseHeaders(ctx),
       });
     }
-
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: traceResponseHeaders(ctx),
       });
     }
 
+    ctx.actorUserId = user.id;
     const body = await req.json().catch(() => ({}));
     const action = body.action || "pulse";
 
-    if (action === "pulse") {
-      // Update heartbeat for all running agents owned by this user
-      const { data: tenants } = await supabaseAdmin
-        .from("tenants")
-        .select("id")
-        .eq("owner_id", user.id);
+    const { data: tenants } = await supabaseAdmin
+      .from("tenants").select("id").eq("owner_id", user.id);
 
-      if (!tenants || tenants.length === 0) {
-        return new Response(JSON.stringify({ error: "No tenant found" }), {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (!tenants || tenants.length === 0) {
+      if (action === "status") {
+        return new Response(JSON.stringify({ agents: [] }), {
+          status: 200, headers: traceResponseHeaders(ctx),
         });
       }
+      return new Response(JSON.stringify({ error: "No tenant found" }), {
+        status: 404, headers: traceResponseHeaders(ctx),
+      });
+    }
 
-      const tenantIds = tenants.map((t) => t.id);
+    const tenantIds = tenants.map((t) => t.id);
+    ctx.tenantId = tenantIds[0];
+
+    await logSystemEvent(ctx, `heartbeat_${action}_started`, "agent", "started");
+
+    if (action === "pulse") {
       const now = new Date().toISOString();
-
-      // Get running agents first
       const { data: runningAgents } = await supabaseAdmin
         .from("agents")
         .select("id, events_count")
         .in("tenant_id", tenantIds)
         .eq("status", "running");
 
-      // Update each agent's heartbeat and increment events
       const updates = (runningAgents || []).map((a) =>
         supabaseAdmin
           .from("agents")
@@ -70,29 +73,17 @@ Deno.serve(async (req) => {
       );
       await Promise.all(updates);
 
-      const updated = runningAgents || [];
+      await logSystemEvent(ctx, "heartbeat_pulse_completed", "agent", "completed", {
+        payload: { agents_updated: runningAgents?.length ?? 0 },
+      });
 
       return new Response(
-        JSON.stringify({ action: "pulse", agents_updated: updated?.length ?? 0, timestamp: now }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ action: "pulse", agents_updated: runningAgents?.length ?? 0, timestamp: now }),
+        { status: 200, headers: traceResponseHeaders(ctx) }
       );
     }
 
     if (action === "status") {
-      // Get all agents with computed health status
-      const { data: tenants } = await supabaseAdmin
-        .from("tenants")
-        .select("id")
-        .eq("owner_id", user.id);
-
-      if (!tenants || tenants.length === 0) {
-        return new Response(JSON.stringify({ agents: [] }), {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const tenantIds = tenants.map((t) => t.id);
       const { data: agents } = await supabaseAdmin
         .from("agents")
         .select("id, name, role, brain, status, events_count, last_heartbeat")
@@ -109,24 +100,26 @@ Deno.serve(async (req) => {
         else if (diffMs < 2 * 60 * 1000) health = "healthy";
         else if (diffMs < 5 * 60 * 1000) health = "warning";
         else health = "critical";
-
         return { ...a, health, last_heartbeat_ago_ms: diffMs };
       });
 
+      await logSystemEvent(ctx, "heartbeat_status_completed", "agent", "completed", {
+        payload: { agent_count: enriched.length },
+      });
+
       return new Response(JSON.stringify({ agents: enriched }), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200, headers: traceResponseHeaders(ctx),
       });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action. Use 'pulse' or 'status'" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400, headers: traceResponseHeaders(ctx),
     });
   } catch (err) {
+    structuredLog("error", ctx, "agent-heartbeat failed", { error: String(err) });
+    await logSystemEvent(ctx, "heartbeat_failed", "agent", "failed", { errorMessage: String(err) });
     return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: traceResponseHeaders(ctx),
     });
   }
 });

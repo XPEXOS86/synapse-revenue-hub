@@ -1,10 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version, x-api-key",
-};
+import { corsHeaders, extractTraceHeaders, getSupabaseAdmin, logSystemEvent, structuredLog, traceResponseHeaders } from "../_shared/observability.ts";
+import type { RequestContext } from "../_shared/observability.ts";
 
 function validateEmailFormat(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -33,14 +28,12 @@ function scoreEmail(email: string) {
   const passed = Object.values(checks).filter(Boolean).length;
   const score = Math.round((passed / Object.keys(checks).length) * 100);
   const risk = score >= 80 ? "low" : score >= 50 ? "medium" : "high";
-
   const status = !checks.valid_format ? "invalid"
     : !checks.not_disposable ? "temporary"
     : !checks.has_mx_likely ? "invalid"
     : risk === "high" ? "risky"
     : risk === "medium" ? "catch-all"
     : "valid";
-
   return { score, risk, status, checks, disposable: !checks.not_disposable, role_based: !checks.not_role_based };
 }
 
@@ -49,7 +42,7 @@ function parseEmails(text: string): string[] {
     .split(/[\n\r,;]+/)
     .map((e) => e.trim().toLowerCase())
     .filter((e) => e.length > 0 && e.includes("@"))
-    .slice(0, 50000); // safety cap
+    .slice(0, 50000);
 }
 
 Deno.serve(async (req) => {
@@ -57,15 +50,21 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabase = getSupabaseAdmin();
+  const { requestId, correlationId } = extractTraceHeaders(req);
+  const ctx: RequestContext = {
+    requestId,
+    correlationId,
+    tenantId: null,
+    actorUserId: null,
+    functionName: "bulk-validate",
+    supabaseAdmin: supabase,
+    startTime: Date.now(),
+  };
+
   try {
-    // Auth via API key or JWT
     const apiKey = req.headers.get("x-api-key");
     const authHeader = req.headers.get("authorization");
-
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
 
     let tenantId: string | null = null;
     let userId: string | null = null;
@@ -83,18 +82,14 @@ Deno.serve(async (req) => {
 
       if (!keyData) {
         return new Response(JSON.stringify({ error: "Invalid API key" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403, headers: traceResponseHeaders(ctx),
         });
       }
-
       if (keyData.brain !== "all" && keyData.brain !== "email-validation") {
         return new Response(JSON.stringify({ error: "API key not authorized for this brain" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403, headers: traceResponseHeaders(ctx),
         });
       }
-
       tenantId = keyData.tenant_id;
       userId = keyData.user_id;
       apiKeyId = keyData.id;
@@ -103,65 +98,50 @@ Deno.serve(async (req) => {
       const { data: { user } } = await supabase.auth.getUser(token);
       if (!user) {
         return new Response(JSON.stringify({ error: "Invalid token" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401, headers: traceResponseHeaders(ctx),
         });
       }
       userId = user.id;
-
       const { data: tenant } = await supabase
-        .from("tenants")
-        .select("id")
-        .eq("owner_id", user.id)
-        .limit(1)
-        .maybeSingle();
-
+        .from("tenants").select("id").eq("owner_id", user.id).limit(1).maybeSingle();
       if (!tenant) {
         return new Response(JSON.stringify({ error: "No tenant found" }), {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 403, headers: traceResponseHeaders(ctx),
         });
       }
       tenantId = tenant.id;
     } else {
       return new Response(JSON.stringify({ error: "Missing authentication" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401, headers: traceResponseHeaders(ctx),
       });
     }
 
+    ctx.tenantId = tenantId;
+    ctx.actorUserId = userId;
+
+    // GET: Check job progress
     const url = new URL(req.url);
     const jobId = url.searchParams.get("job_id");
 
-    // GET: Check progress of existing job
     if (req.method === "GET" && jobId) {
       const { data: job } = await supabase
-        .from("bulk_jobs")
-        .select("*")
-        .eq("id", jobId)
-        .eq("tenant_id", tenantId)
-        .maybeSingle();
-
+        .from("bulk_jobs").select("*").eq("id", jobId).eq("tenant_id", tenantId).maybeSingle();
       if (!job) {
         return new Response(JSON.stringify({ error: "Job not found" }), {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 404, headers: traceResponseHeaders(ctx),
         });
       }
-
-      return new Response(JSON.stringify(job), {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(JSON.stringify(job), { status: 200, headers: traceResponseHeaders(ctx) });
     }
 
-    // POST: Create new bulk job
     if (req.method !== "POST") {
       return new Response(JSON.stringify({ error: "Method not allowed" }), {
-        status: 405,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 405, headers: traceResponseHeaders(ctx),
       });
     }
+
+    // Log started
+    await logSystemEvent(ctx, "bulk_validation_started", "api", "started");
 
     const contentType = req.headers.get("content-type") || "";
     let emails: string[] = [];
@@ -173,25 +153,19 @@ Deno.serve(async (req) => {
       const formData = await req.formData();
       const file = formData.get("file") as File | null;
       webhookUrl = formData.get("webhook_url") as string | null;
-
       if (!file) {
         return new Response(JSON.stringify({ error: "Missing 'file' in form data" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: traceResponseHeaders(ctx),
         });
       }
-
       fileName = file.name;
       const ext = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
       fileFormat = ext === ".txt" ? "txt" : ext === ".xlsx" ? "xlsx" : "csv";
-
       if (fileFormat === "xlsx") {
         return new Response(JSON.stringify({ error: "XLSX parsing not yet supported. Please use CSV or TXT." }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400, headers: traceResponseHeaders(ctx),
         });
       }
-
       const text = await file.text();
       emails = parseEmails(text);
     } else {
@@ -208,12 +182,10 @@ Deno.serve(async (req) => {
 
     if (emails.length === 0) {
       return new Response(JSON.stringify({ error: "No valid emails found" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: traceResponseHeaders(ctx),
       });
     }
 
-    // Create bulk job
     const { data: job, error: jobError } = await supabase
       .from("bulk_jobs")
       .insert({
@@ -230,19 +202,16 @@ Deno.serve(async (req) => {
       .single();
 
     if (jobError || !job) {
+      await logSystemEvent(ctx, "bulk_validation_failed", "api", "failed", { errorMessage: jobError?.message });
       return new Response(JSON.stringify({ error: "Failed to create bulk job", detail: jobError?.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: traceResponseHeaders(ctx),
       });
     }
 
-    // Process emails in batches
+    structuredLog("info", ctx, `Bulk job created: ${job.id}, ${emails.length} emails`);
+
     const BATCH_SIZE = 100;
-    let validCount = 0;
-    let invalidCount = 0;
-    let catchAllCount = 0;
-    let riskyCount = 0;
-    let processed = 0;
+    let validCount = 0, invalidCount = 0, catchAllCount = 0, riskyCount = 0, processed = 0;
 
     for (let i = 0; i < emails.length; i += BATCH_SIZE) {
       const batch = emails.slice(i, i + BATCH_SIZE);
@@ -252,7 +221,6 @@ Deno.serve(async (req) => {
         else if (result.status === "invalid") invalidCount++;
         else if (result.status === "catch-all") catchAllCount++;
         else riskyCount++;
-
         return {
           tenant_id: tenantId!,
           bulk_job_id: job.id,
@@ -269,45 +237,29 @@ Deno.serve(async (req) => {
           checks: result.checks,
         };
       });
-
       await supabase.from("validation_results").insert(results);
       processed += batch.length;
-
-      // Update progress
-      await supabase
-        .from("bulk_jobs")
-        .update({
-          processed,
-          valid_count: validCount,
-          invalid_count: invalidCount,
-          catch_all_count: catchAllCount,
-          risky_count: riskyCount,
-        })
-        .eq("id", job.id);
+      await supabase.from("bulk_jobs").update({
+        processed, valid_count: validCount, invalid_count: invalidCount,
+        catch_all_count: catchAllCount, risky_count: riskyCount,
+      }).eq("id", job.id);
     }
 
-    // Mark completed
-    await supabase
-      .from("bulk_jobs")
-      .update({
-        status: "completed",
-        processed,
-        valid_count: validCount,
-        invalid_count: invalidCount,
-        catch_all_count: catchAllCount,
-        risky_count: riskyCount,
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", job.id);
+    await supabase.from("bulk_jobs").update({
+      status: "completed", processed,
+      valid_count: validCount, invalid_count: invalidCount,
+      catch_all_count: catchAllCount, risky_count: riskyCount,
+      completed_at: new Date().toISOString(),
+    }).eq("id", job.id);
 
-    // Log usage
     await supabase.from("usage_logs").insert({
       tenant_id: tenantId!,
       api_key_id: apiKeyId,
       endpoint: "/bulk-validate",
       brain: "email-validation",
       status_code: 200,
-      response_time_ms: 0,
+      response_time_ms: Date.now() - ctx.startTime,
+      request_id: ctx.requestId,
     });
 
     const summary = {
@@ -323,7 +275,6 @@ Deno.serve(async (req) => {
       ),
     };
 
-    // Webhook callback if configured
     if (webhookUrl) {
       try {
         await fetch(webhookUrl, {
@@ -331,19 +282,18 @@ Deno.serve(async (req) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(summary),
         });
-      } catch {
-        // silent fail for webhook
-      }
+      } catch { /* silent */ }
     }
 
-    return new Response(JSON.stringify(summary), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    await logSystemEvent(ctx, "bulk_validation_completed", "api", "completed", { payload: summary as unknown as Record<string, unknown> });
+    structuredLog("info", ctx, "Bulk validation completed", summary);
+
+    return new Response(JSON.stringify(summary), { status: 200, headers: traceResponseHeaders(ctx) });
   } catch (err) {
+    structuredLog("error", ctx, "Bulk validation failed", { error: String(err) });
+    await logSystemEvent(ctx, "bulk_validation_failed", "api", "failed", { errorMessage: String(err) });
     return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: traceResponseHeaders(ctx),
     });
   }
 });

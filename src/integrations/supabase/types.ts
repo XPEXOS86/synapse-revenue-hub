@@ -69,6 +69,7 @@ export type Database = {
           event_type: string
           id: string
           payload: Json | null
+          request_id: string | null
           severity: string
           tenant_id: string
         }
@@ -79,6 +80,7 @@ export type Database = {
           event_type: string
           id?: string
           payload?: Json | null
+          request_id?: string | null
           severity?: string
           tenant_id: string
         }
@@ -89,6 +91,7 @@ export type Database = {
           event_type?: string
           id?: string
           payload?: Json | null
+          request_id?: string | null
           severity?: string
           tenant_id?: string
         }
@@ -354,6 +357,59 @@ export type Database = {
           },
         ]
       }
+      system_events: {
+        Row: {
+          actor_user_id: string | null
+          correlation_id: string | null
+          created_at: string
+          error_message: string | null
+          event_type: string
+          function_name: string | null
+          id: string
+          payload: Json
+          request_id: string
+          source: string
+          status: string | null
+          tenant_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          correlation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          function_name?: string | null
+          id?: string
+          payload?: Json
+          request_id: string
+          source: string
+          status?: string | null
+          tenant_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          correlation_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          function_name?: string | null
+          id?: string
+          payload?: Json
+          request_id?: string
+          source?: string
+          status?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
           created_at: string
@@ -397,6 +453,7 @@ export type Database = {
           created_at: string
           endpoint: string
           id: string
+          request_id: string | null
           response_time_ms: number | null
           status_code: number | null
           tenant_id: string
@@ -407,6 +464,7 @@ export type Database = {
           created_at?: string
           endpoint: string
           id?: string
+          request_id?: string | null
           response_time_ms?: number | null
           status_code?: number | null
           tenant_id: string
@@ -417,6 +475,7 @@ export type Database = {
           created_at?: string
           endpoint?: string
           id?: string
+          request_id?: string | null
           response_time_ms?: number | null
           status_code?: number | null
           tenant_id?: string
