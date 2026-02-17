@@ -1,8 +1,7 @@
 import Navbar from "@/components/landing/Navbar";
 import Hero from "@/components/landing/Hero";
 import InfraStatus from "@/components/landing/InfraStatus";
-import ProblemSection from "@/components/landing/ProblemSection";
-import SolutionSection from "@/components/landing/SolutionSection";
+import ModulesSection from "@/components/landing/ModulesSection";
 import HowItWorks from "@/components/landing/HowItWorks";
 import ProductOverview from "@/components/landing/ProductOverview";
 import LiveValidationPanel from "@/components/landing/LiveValidationPanel";
@@ -13,6 +12,7 @@ import ObjectionHandling from "@/components/landing/ObjectionHandling";
 import Pricing from "@/components/landing/Pricing";
 import CTA from "@/components/landing/CTA";
 import Footer from "@/components/landing/Footer";
+import AboutSection from "@/components/landing/AboutSection";
 
 const Index = () => {
   return (
@@ -20,8 +20,7 @@ const Index = () => {
       <Navbar />
       <Hero />
       <InfraStatus />
-      <ProblemSection />
-      <SolutionSection />
+      <ModulesSection />
       <HowItWorks />
       <ProductOverview />
       <LiveValidationPanel />
@@ -32,6 +31,7 @@ const Index = () => {
       <div id="pricing">
         <Pricing />
       </div>
+      <AboutSection />
       <CTA />
       <Footer />
     </div>

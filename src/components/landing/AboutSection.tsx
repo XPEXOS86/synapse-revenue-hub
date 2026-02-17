@@ -10,9 +10,9 @@ const AboutSection = () => {
           viewport={{ once: true }}
           className="max-w-2xl mx-auto text-center"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold mb-6">About Xpex Systems AI</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-6">About XPEX Systems AI</h2>
           <p className="text-muted-foreground leading-relaxed text-lg">
-            Xpex Systems AI builds scalable infrastructure tools focused on data validation, automation and performance-driven systems for modern businesses.
+            XPEX Systems AI builds modular, AI-powered operational infrastructure for revenue-driven companies worldwide. From validation to fraud detection, we provide the building blocks for modern business operations.
           </p>
         </motion.div>
       </div>

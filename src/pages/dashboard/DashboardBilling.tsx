@@ -156,33 +156,31 @@ const DashboardBilling = () => {
               <h3 className="font-bold text-lg">{plan.name}</h3>
               <div className="mt-2 mb-4">
                 <span className="text-3xl font-bold">{plan.display_price}</span>
-                <span className="text-muted-foreground text-sm">/mês</span>
+                <span className="text-muted-foreground text-sm">/mo</span>
               </div>
               <ul className="space-y-2 text-sm text-muted-foreground mb-6">
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary" />
-                  {plan.included_credits === -1
-                    ? "Créditos ilimitados"
-                    : `${plan.included_credits.toLocaleString()} créditos/mês`}
+                   {`${plan.included_credits.toLocaleString()} credits/mo`}
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary" />
-                  API completa
+                   Full API access
                 </li>
                 <li className="flex items-center gap-2">
                   <Check className="h-4 w-4 text-primary" />
-                  Validação em massa
+                   Bulk validation
                 </li>
-                {tier === "enterprise" && (
+                {tier === "scale" && (
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-primary" />
-                    Suporte dedicado
+                    Dedicated support
                   </li>
                 )}
               </ul>
               {isActive ? (
                 <Button size="sm" variant="outline" className="w-full" disabled>
-                  Plano Atual
+                   Current Plan
                 </Button>
               ) : (
                 <Button
@@ -196,7 +194,7 @@ const DashboardBilling = () => {
                   ) : (
                     <ExternalLink className="h-4 w-4" />
                   )}
-                  {subscription.subscribed ? "Trocar Plano" : "Assinar"}
+                  {subscription.subscribed ? "Switch Plan" : "Subscribe"}
                 </Button>
               )}
             </motion.div>
