@@ -1,1 +1,28 @@
+// WhatsApp Validation API Block
 
+async function validateWhatsAppMessage(phoneNumber, message) {
+    const url = 'https://api.whatsapp.com/v1/messages';
+    const token = 'YOUR_WHATSAPP_API_TOKEN'; // Replace with your WhatsApp Business API token
+
+    const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            to: phoneNumber,
+            body: message
+        })
+    });
+
+    if (!response.ok) {
+        throw new Error(`Error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+}
+
+// Usage example:
+// validateWhatsAppMessage('+1234567890', 'Hello World!').then(console.log).catch(console.error);
