@@ -21,29 +21,6 @@ CREATE INDEX idx_teams_is_active ON public.teams(is_active);
 -- Enable RLS on teams table
 ALTER TABLE public.teams ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies for teams
--- Team members can view their teams
-CREATE POLICY "Team members can view their teams" ON public.teams FOR SELECT
-  USING (
-    auth.uid() IN (
-      SELECT user_id FROM public.team_members 
-      WHERE team_id = id
-    )
-    OR owner_id = (SELECT id FROM public.profiles WHERE user_id = auth.uid())
-  );
-
--- Owners can update their teams
-CREATE POLICY "Team owners can update their teams" ON public.teams FOR UPDATE
-  USING (owner_id = (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
-
--- Owners can delete their teams
-CREATE POLICY "Team owners can delete their teams" ON public.teams FOR DELETE
-  USING (owner_id = (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
-
--- Authenticated users can insert new teams
-CREATE POLICY "Authenticated users can create teams" ON public.teams FOR INSERT
-  WITH CHECK (owner_id = (SELECT id FROM public.profiles WHERE user_id = auth.uid()));
-
 -- Trigger to update updated_at on teams
 CREATE TRIGGER update_teams_updated_at
   BEFORE UPDATE ON public.teams

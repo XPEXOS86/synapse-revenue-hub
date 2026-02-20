@@ -27,6 +27,7 @@ import EnterprisePage from "./pages/institutional/EnterprisePage";
 import Contact from "./pages/institutional/Contact";
 import PrivacyPolicy from "./pages/institutional/PrivacyPolicy";
 import TermsOfService from "./pages/institutional/TermsOfService";
+import AccountSettings from "./pages/AccountSettings";
 
 const queryClient = new QueryClient();
 
@@ -53,6 +54,14 @@ const App = () => (
             <Route path="/contact" element={<Contact />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route
+              path="/account-settings"
+              element={
+                <ProtectedRoute>
+                  <AccountSettings />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/dashboard"
               element={
