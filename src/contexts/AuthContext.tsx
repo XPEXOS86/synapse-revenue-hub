@@ -3,6 +3,41 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getPlanByProductId, getPlanByPriceId, type PlanTier } from "@/config/plans";
 
+interface UserProfile {
+  id: string;
+  user_id: string;
+  username: string | null;
+  email: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  logo_url: string | null;
+  owner_id: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface TeamMember {
+  id: string;
+  team_id: string;
+  user_id: string;
+  role: "owner" | "admin" | "member" | "guest";
+  permissions: Record<string, boolean>;
+  joined_at: string;
+  updated_at: string;
+}
+
 interface SubscriptionState {
   subscribed: boolean;
   status: string | null;
@@ -18,8 +53,15 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  profile: UserProfile | null;
+  currentTeam: Team | null;
+  teams: Team[];
+  teamMember: TeamMember | null;
   subscription: SubscriptionState;
   refreshSubscription: () => Promise<void>;
+  loadProfile: () => Promise<void>;
+  loadTeams: () => Promise<void>;
+  setCurrentTeam: (team: Team | null) => void;
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -42,7 +84,120 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [currentTeam, setCurrentTeamState] = useState<Team | null>(null);
+  const [teams, setTeams] = useState<Team[]>([]);
+  const [teamMember, setTeamMember] = useState<TeamMember | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionState>(defaultSubscription);
+
+  const loadProfile = useCallback(async () => {
+    if (!user) {
+      setProfile(null);
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error) {
+        console.error("[Auth] Error loading profile:", error);
+        setProfile(null);
+        return;
+      }
+
+      setProfile(data as UserProfile);
+    } catch (err) {
+      console.error("[Auth] Profile load exception:", err);
+      setProfile(null);
+    }
+  }, [user]);
+
+  const loadTeams = useCallback(async () => {
+    if (!user || !profile) {
+      setTeams([]);
+      setCurrentTeamState(null);
+      setTeamMember(null);
+      return;
+    }
+
+    try {
+      // Get teams where user is a member
+      const { data: memberTeams, error: memberError } = await supabase
+        .from("team_members")
+        .select("team_id")
+        .eq("user_id", profile.id);
+
+      if (memberError) throw memberError;
+
+      if (!memberTeams || memberTeams.length === 0) {
+        setTeams([]);
+        setCurrentTeamState(null);
+        setTeamMember(null);
+        return;
+      }
+
+      const teamIds = memberTeams.map((m) => m.team_id);
+
+      // Get team details
+      const { data: teamData, error: teamError } = await supabase
+        .from("teams")
+        .select("*")
+        .in("id", teamIds);
+
+      if (teamError) throw teamError;
+
+      setTeams(teamData as Team[]);
+
+      // Set first team as current
+      if (teamData && teamData.length > 0) {
+        setCurrentTeamState(teamData[0] as Team);
+
+        // Load current team member info
+        const { data: memberData } = await supabase
+          .from("team_members")
+          .select("*")
+          .eq("team_id", teamData[0].id)
+          .eq("user_id", profile.id)
+          .single();
+
+        if (memberData) {
+          setTeamMember(memberData as TeamMember);
+        }
+      }
+    } catch (err) {
+      console.error("[Auth] Error loading teams:", err);
+      setTeams([]);
+      setCurrentTeamState(null);
+    }
+  }, [user, profile]);
+
+  const setCurrentTeam = useCallback(async (team: Team | null) => {
+    setCurrentTeamState(team);
+
+    if (team && profile) {
+      try {
+        const { data: memberData } = await supabase
+          .from("team_members")
+          .select("*")
+          .eq("team_id", team.id)
+          .eq("user_id", profile.id)
+          .single();
+
+        if (memberData) {
+          setTeamMember(memberData as TeamMember);
+        }
+      } catch (err) {
+        console.error("[Auth] Error loading team member:", err);
+        setTeamMember(null);
+      }
+    } else {
+      setTeamMember(null);
+    }
+  }, [profile]);
 
   const refreshSubscription = useCallback(async () => {
     const currentSession = session;
@@ -80,6 +235,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [session]);
 
+  // Initialize auth session
   useEffect(() => {
     const { data: { subscription: authSub } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
@@ -95,6 +251,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => authSub.unsubscribe();
   }, []);
+
+  // Load profile when user changes
+  useEffect(() => {
+    loadProfile();
+  }, [user, loadProfile]);
+
+  // Load teams when profile changes
+  useEffect(() => {
+    if (profile) {
+      loadTeams();
+    }
+  }, [profile, loadTeams]);
 
   // Check subscription when session changes
   useEffect(() => {
@@ -131,7 +299,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, subscription, refreshSubscription, signUp, signIn, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        profile,
+        currentTeam,
+        teams,
+        teamMember,
+        subscription,
+        refreshSubscription,
+        loadProfile,
+        loadTeams,
+        setCurrentTeam,
+        signUp,
+        signIn,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
