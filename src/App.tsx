@@ -17,44 +17,48 @@ import Pricing from "./pages/Pricing";
 import Sandbox from "./pages/Sandbox";
 import ApiDocs from "./pages/ApiDocs";
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/sandbox" element={<Sandbox />} />
-            <Route path="/pricing" element={<Pricing />} />
-            <Route path="/api" element={<ApiDocs />} />
-            <Route path="/docs" element={<ApiDocs />} />
+const queryClient = new QueryClient();
 
-            {/* Protected Routes */}
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<DashboardOverview />} />
-              <Route path="usage" element={<DashboardUsage />} />
-              <Route path="billing" element={<DashboardBilling />} />
-              <Route path="keys" element={<DashboardKeys />} />
-            </Route>
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/sandbox" element={<Sandbox />} />
+              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/api" element={<ApiDocs />} />
+              <Route path="/docs" element={<ApiDocs />} />
 
-            {/* 404 */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </AuthProvider>
-  </QueryClientProvider>
-);
+              {/* Protected Routes */}
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<DashboardOverview />} />
+                <Route path="usage" element={<DashboardUsage />} />
+                <Route path="billing" element={<DashboardBilling />} />
+                <Route path="keys" element={<DashboardKeys />} />
+              </Route>
+
+              {/* 404 */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
