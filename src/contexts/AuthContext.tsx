@@ -2,6 +2,11 @@ import { createContext, useContext, useEffect, useState, useCallback, ReactNode 
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getPlanByProductId, getPlanByPriceId, type PlanTier } from "@/config/plans";
+import * as authService from "@/services/authService";
+import * as profileService from "@/services/profileService";
+import * as teamService from "@/services/teamService";
+import * as invitationService from "@/services/invitationService";
+import { AuditActions, logAuditAction } from "@/services/auditService";
 
 interface UserProfile {
   id: string;
@@ -65,6 +70,15 @@ interface AuthContextType {
   signUp: (email: string, password: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
+  // New Phase 2 methods
+  createTeam: (name: string, slug: string, description?: string) => Promise<Team>;
+  updateProfile: (updates: Partial<UserProfile>) => Promise<void>;
+  inviteTeamMember: (email: string, role: "owner" | "admin" | "member" | "guest") => Promise<void>;
+  updateTeamMemberRole: (memberId: string, role: "owner" | "admin" | "member" | "guest") => Promise<void>;
+  removeTeamMember: (memberId: string) => Promise<void>;
+  getTeamMembers: () => Promise<TeamMember[]>;
+  acceptTeamInvitation: (invitationId: string) => Promise<void>;
+  getPendingInvitations: () => Promise<invitationService.TeamInvitation[]>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -295,8 +309,184 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await authService.signOut();
   };
+
+  // Phase 2: Create team
+  const createTeam = useCallback(
+    async (name: string, slug: string, description?: string) => {
+      if (!user || !profile) throw new Error("User not authenticated");
+
+      try {
+        const newTeam = await teamService.createTeam(profile.id, {
+          name,
+          slug,
+          description,
+        });
+
+        // Log audit action
+        await logAuditAction(
+          newTeam.id,
+          user.id,
+          AuditActions.TEAM_CREATED,
+          "team",
+          newTeam.id,
+          { name, slug }
+        );
+
+        await loadTeams();
+        return newTeam;
+      } catch (error) {
+        console.error("Error creating team:", error);
+        throw error;
+      }
+    },
+    [user, profile, loadTeams]
+  );
+
+  // Phase 2: Update profile
+  const updateProfile = useCallback(
+    async (updates: Partial<UserProfile>) => {
+      if (!user) throw new Error("User not authenticated");
+
+      try {
+        await profileService.updateUserProfile(user.id, updates);
+        await loadProfile();
+      } catch (error) {
+        console.error("Error updating profile:", error);
+        throw error;
+      }
+    },
+    [user, loadProfile]
+  );
+
+  // Phase 2: Invite team member
+  const inviteTeamMember = useCallback(
+    async (email: string, role: "owner" | "admin" | "member" | "guest") => {
+      if (!user || !currentTeam) throw new Error("Team or user not available");
+
+      try {
+        await invitationService.inviteUserToTeam(currentTeam.id, email, role, user.id);
+
+        // Log audit action
+        await logAuditAction(
+          currentTeam.id,
+          user.id,
+          AuditActions.INVITATION_SENT,
+          "invitation",
+          email,
+          { email, role }
+        );
+      } catch (error) {
+        console.error("Error inviting team member:", error);
+        throw error;
+      }
+    },
+    [user, currentTeam]
+  );
+
+  // Phase 2: Update team member role
+  const updateTeamMemberRole = useCallback(
+    async (memberId: string, role: "owner" | "admin" | "member" | "guest") => {
+      if (!user || !currentTeam) throw new Error("Team or user not available");
+
+      try {
+        await teamService.updateTeamMemberRole(memberId, role);
+
+        // Log audit action
+        await logAuditAction(
+          currentTeam.id,
+          user.id,
+          AuditActions.MEMBER_ROLE_CHANGED,
+          "team_member",
+          memberId,
+          { new_role: role }
+        );
+
+        await loadTeams();
+      } catch (error) {
+        console.error("Error updating team member role:", error);
+        throw error;
+      }
+    },
+    [user, currentTeam, loadTeams]
+  );
+
+  // Phase 2: Remove team member
+  const removeTeamMember = useCallback(
+    async (memberId: string) => {
+      if (!user || !currentTeam) throw new Error("Team or user not available");
+
+      try {
+        await teamService.removeTeamMember(memberId);
+
+        // Log audit action
+        await logAuditAction(
+          currentTeam.id,
+          user.id,
+          AuditActions.MEMBER_REMOVED,
+          "team_member",
+          memberId
+        );
+
+        await loadTeams();
+      } catch (error) {
+        console.error("Error removing team member:", error);
+        throw error;
+      }
+    },
+    [user, currentTeam, loadTeams]
+  );
+
+  // Phase 2: Get team members
+  const getTeamMembers = useCallback(async () => {
+    if (!currentTeam) throw new Error("Team not available");
+
+    try {
+      return await teamService.getTeamMembers(currentTeam.id);
+    } catch (error) {
+      console.error("Error getting team members:", error);
+      throw error;
+    }
+  }, [currentTeam]);
+
+  // Phase 2: Accept team invitation
+  const acceptTeamInvitation = useCallback(
+    async (invitationId: string) => {
+      if (!user) throw new Error("User not authenticated");
+
+      try {
+        await invitationService.acceptInvitation(invitationId, user.id);
+
+        // Log audit action
+        await logAuditAction(
+          user.id,
+          user.id,
+          AuditActions.INVITATION_ACCEPTED,
+          "invitation",
+          invitationId
+        );
+
+        await loadTeams();
+      } catch (error) {
+        console.error("Error accepting invitation:", error);
+        throw error;
+      }
+    },
+    [user, loadTeams]
+  );
+
+  // Phase 2: Get pending invitations
+  const getPendingInvitations = useCallback(async () => {
+    if (!profile?.email) throw new Error("User email not available");
+
+    try {
+      return await invitationService.getUserPendingInvitations(profile.email);
+    } catch (error) {
+      console.error("Error getting pending invitations:", error);
+      throw error;
+    }
+  }, [profile?.email]);
 
   return (
     <AuthContext.Provider
@@ -316,6 +506,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signUp,
         signIn,
         signOut,
+        // Phase 2 methods
+        createTeam,
+        updateProfile,
+        inviteTeamMember,
+        updateTeamMemberRole,
+        removeTeamMember,
+        getTeamMembers,
+        acceptTeamInvitation,
+        getPendingInvitations,
       }}
     >
       {children}
