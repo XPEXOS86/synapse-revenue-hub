@@ -14,7 +14,7 @@ CREATE TABLE role_permissions (
   role VARCHAR(50) NOT NULL, -- 'owner', 'admin', 'member', 'guest'
   permission_id UUID NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
   granted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  granted_by UUID NOT NULL REFERENCES auth.users(id),
+  granted_by UUID,
   
   -- Unique constraint: each role can have each permission only once
   UNIQUE(role, permission_id)
@@ -73,26 +73,26 @@ INSERT INTO permissions (name, description, category) VALUES
 
 -- Default role permissions
 -- Owner has all permissions
-INSERT INTO role_permissions (role, permission_id, granted_by)
-SELECT 'owner', id, '00000000-0000-0000-0000-000000000000'::uuid
+INSERT INTO role_permissions (role, permission_id)
+SELECT 'owner', id
 FROM permissions;
 
 -- Admin has most permissions (excluding role.manage, permission.manage)
-INSERT INTO role_permissions (role, permission_id, granted_by)
-SELECT 'admin', id, '00000000-0000-0000-0000-000000000000'::uuid
+INSERT INTO role_permissions (role, permission_id)
+SELECT 'admin', id
 FROM permissions
 WHERE name NOT IN ('role.manage', 'permission.manage', 'team.delete');
 
 -- Member has basic permissions
-INSERT INTO role_permissions (role, permission_id, granted_by)
-SELECT 'member', id, '00000000-0000-0000-0000-000000000000'::uuid
+INSERT INTO role_permissions (role, permission_id)
+SELECT 'member', id
 FROM permissions
 WHERE category IN ('member', 'team')
   AND name NOT IN ('team.delete', 'team.update', 'member.remove', 'member.update');
 
 -- Guest has minimal permissions
-INSERT INTO role_permissions (role, permission_id, granted_by)
-SELECT 'guest', id, '00000000-0000-0000-0000-000000000000'::uuid
+INSERT INTO role_permissions (role, permission_id)
+SELECT 'guest', id
 FROM permissions
 WHERE name IN ('team.read', 'member.view_profile', 'member.list', 'team.list');
 
@@ -114,24 +114,16 @@ CREATE POLICY "Anyone can read role permissions"
   FOR SELECT
   USING (true);
 
--- RLS Policy: Only owners and admins can insert/update role permissions
-CREATE POLICY "Admins can manage role permissions"
+-- RLS Policy: Only authenticated users can insert/update role permissions (further restricted at application level)
+CREATE POLICY "Authenticated users can manage role permissions"
   ON role_permissions
   FOR INSERT
-  WITH CHECK (
-    EXISTS (
-      SELECT 1 FROM auth.users WHERE id = current_user_id()
-    )
-  );
+  WITH CHECK (auth.role() = 'authenticated');
 
-CREATE POLICY "Admins can update role permissions"
+CREATE POLICY "Authenticated users can update role permissions"
   ON role_permissions
   FOR UPDATE
-  USING (
-    EXISTS (
-      SELECT 1 FROM auth.users WHERE id = current_user_id()
-    )
-  );
+  USING (auth.role() = 'authenticated');
 
 -- Add comment to table
 COMMENT ON TABLE permissions IS 'Granular permissions for OpenClaw RBAC system';

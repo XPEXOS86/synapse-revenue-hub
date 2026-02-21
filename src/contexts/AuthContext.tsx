@@ -7,6 +7,9 @@ import * as profileService from "@/services/profileService";
 import * as teamService from "@/services/teamService";
 import * as invitationService from "@/services/invitationService";
 import { AuditActions, logAuditAction } from "@/services/auditService";
+import * as permissionService from "@/services/permissionService";
+import * as roleService from "@/services/roleService";
+import type { UserRole, PermissionName } from "@/types/permissions";
 
 interface UserProfile {
   id: string;
@@ -79,6 +82,14 @@ interface AuthContextType {
   getTeamMembers: () => Promise<TeamMember[]>;
   acceptTeamInvitation: (invitationId: string) => Promise<void>;
   getPendingInvitations: () => Promise<invitationService.TeamInvitation[]>;
+  // Phase 3: Permission Management methods
+  checkPermission: (permission: PermissionName) => boolean;
+  userHasPermissionInTeam: (permission: PermissionName) => Promise<boolean>;
+  updateMemberRole: (memberId: string, newRole: UserRole) => Promise<void>;
+  getRolePermissions: (role: UserRole) => Promise<PermissionName[]>;
+  getUserRoleInTeam: (userId: string, teamId: string) => Promise<UserRole | null>;
+  getTeamMembersWithRoles: () => Promise<any[]>;
+  getRoleStats: () => Promise<Record<UserRole, number>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -488,6 +499,84 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [profile?.email]);
 
+  // Phase 3: Check if user has a permission
+  const checkPermission = useCallback((permission: PermissionName): boolean => {
+    if (!teamMember) return false;
+    const role = teamMember.role as UserRole;
+    const { roleHasPermission } = require("@/lib/permissions");
+    return roleHasPermission(role, permission);
+  }, [teamMember]);
+
+  // Phase 3: Check user permission in team (database lookup)
+  const userHasPermissionInTeam = useCallback(async (permission: PermissionName): Promise<boolean> => {
+    if (!user || !currentTeam) return false;
+
+    try {
+      return await permissionService.userHasPermissionInTeam(user.id, currentTeam.id, permission);
+    } catch (error) {
+      console.error("Error checking permission:", error);
+      return false;
+    }
+  }, [user, currentTeam]);
+
+  // Phase 3: Update member role
+  const updateMemberRole = useCallback(async (memberId: string, newRole: UserRole) => {
+    if (!user || !currentTeam) throw new Error("User or team not available");
+
+    try {
+      await roleService.updateUserRoleInTeam(memberId, currentTeam.id, newRole, user.id);
+      await loadTeams();
+    } catch (error) {
+      console.error("Error updating member role:", error);
+      throw error;
+    }
+  }, [user, currentTeam, loadTeams]);
+
+  // Phase 3: Get role permissions
+  const getRolePermissions = useCallback(async (role: UserRole): Promise<PermissionName[]> => {
+    try {
+      const permissions = await permissionService.getRolePermissions(role);
+      return permissions.map((p) => p.name as PermissionName);
+    } catch (error) {
+      console.error("Error getting role permissions:", error);
+      return [];
+    }
+  }, []);
+
+  // Phase 3: Get user role in team
+  const getUserRoleInTeam = useCallback(async (userId: string, teamId: string): Promise<UserRole | null> => {
+    try {
+      return await roleService.getUserRoleInTeam(userId, teamId);
+    } catch (error) {
+      console.error("Error getting user role:", error);
+      return null;
+    }
+  }, []);
+
+  // Phase 3: Get team members with roles
+  const getTeamMembersWithRoles = useCallback(async () => {
+    if (!currentTeam) throw new Error("Team not available");
+
+    try {
+      return await roleService.getTeamMembersWithRoles(currentTeam.id);
+    } catch (error) {
+      console.error("Error getting team members with roles:", error);
+      throw error;
+    }
+  }, [currentTeam]);
+
+  // Phase 3: Get role statistics
+  const getRoleStats = useCallback(async (): Promise<Record<UserRole, number>> => {
+    if (!currentTeam) throw new Error("Team not available");
+
+    try {
+      return await roleService.getRoleStatistics(currentTeam.id);
+    } catch (error) {
+      console.error("Error getting role statistics:", error);
+      throw error;
+    }
+  }, [currentTeam]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -515,6 +604,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         getTeamMembers,
         acceptTeamInvitation,
         getPendingInvitations,
+        // Phase 3 methods
+        checkPermission,
+        userHasPermissionInTeam,
+        updateMemberRole,
+        getRolePermissions,
+        getUserRoleInTeam,
+        getTeamMembersWithRoles,
+        getRoleStats,
       }}
     >
       {children}
