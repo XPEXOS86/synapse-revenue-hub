@@ -1,50 +1,111 @@
-# OpenClaw Ecosystem - Authentication System
+# GoldMail AI - Email Intelligence Platform
 
-## Project Overview
+## Overview
 
-This is the **OpenClaw Ecosystem** authentication system built with React, TypeScript, Supabase, and TailwindCSS.
+**GoldMail AI** is an autonomous email intelligence agent built on the **XPEX SYSTEMS AI** ecosystem. It provides enterprise-grade email validation, deliverability analysis, and compliance tracking powered by artificial intelligence.
 
-### Current Status: Phase 1-2-3 Complete ✅
+### Current Status: GoldMail AI Restructuring Complete ✅
 
-**Implementation Progress:**
-- Phase 1: Database Schema ✅ (5 tables + migrations)
-- Phase 2: Authentication System ✅ (5 services, 734 component lines)
-- Phase 3: Permission Management & RBAC ✅ (23 permissions, 4-role hierarchy)
+**Complete Restructuring:**
+- All legacy modules removed (Shield, Connect, Insight, Automate, Marketplace)
+- Focused landing page for GoldMail AI
+- Production authentication system (Phases 1-3)
+- Team management & RBAC infrastructure
+- Email validation dashboard
+- Live sandbox for testing
+- Pricing page with tiers
+- API documentation framework
 
-**Key Statistics:**
-- Total Lines of Code: 4,200+
-- Database Tables: 7 (profiles, teams, team_members, team_invitations, audit_logs, permissions, role_permissions)
-- Services: 7 (auth, profile, team, invitation, audit, permission, role)
-- React Components: 8 (including permission management)
-- React Hooks: 4 (useAuth, useTeams, usePermissions, useRoleManagement)
-- TypeScript Type Definitions: 50+
+**Key Infrastructure Retained:**
+- Complete auth system (Phases 1-3)
+- 7 database tables with RLS policies
+- 7 services (auth, profile, team, invitation, audit, permission, role)
+- RBAC with 23 granular permissions
 
 ## Project Info
 
 **Repository**: XPEXOS86/synapse-revenue-hub  
 **Branch**: v0/xpexos86-2780b578  
-**Implementation Date**: 2026-02-20  
-**Latest Update**: 2026-02-21 (Phase 3 Complete)
+**Latest Update**: 2026-02-21 (GoldMail AI Restructuring)
 
-## Quick Start Documentation
+## Quick Start
 
-Start with these files for different needs:
+### Available Pages
 
-**New to the project?**
-→ Read [QUICK_START.md](./QUICK_START.md) for usage examples and patterns
+**Public Pages:**
+- `/` - GoldMail AI landing page
+- `/sandbox` - Live email validation tester
+- `/pricing` - SaaS pricing tiers
+- `/api` - API documentation
+- `/auth` - Sign up & login
 
-**Want to understand the architecture?**
-→ Read [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed system design
+**Protected Pages:**
+- `/dashboard` - User dashboard
+- `/dashboard/usage` - API usage statistics
+- `/dashboard/billing` - Subscription management
+- `/dashboard/keys` - API key management
 
-**Need technical implementation details?**
-→ Read [PHASE_1_2_IMPLEMENTATION.md](./PHASE_1_2_IMPLEMENTATION.md) for auth schema & APIs
-→ Read [PHASE_3_IMPLEMENTATION.md](./PHASE_3_IMPLEMENTATION.md) for RBAC system
+### Running Locally
 
-**Looking for a summary?**
-→ Read [IMPLEMENTATION_SUMMARY.md](./IMPLEMENTATION_SUMMARY.md) (Phases 1-2)
-→ Read [PHASE_3_SUMMARY.txt](./PHASE_3_SUMMARY.txt) (Phase 3 complete details)
+```bash
+# Install dependencies
+npm install
 
-## Key Features Implemented (Phase 1-3)
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+```
+
+## Features
+
+### Email Validation
+- Real-time email verification
+- Deliverability scoring
+- Risk assessment
+- SMTP validation
+
+### API Integration
+- REST API with authentication
+- Webhook support
+- Batch processing
+- Rate limiting
+
+### Authentication & Team Management
+- Email/password authentication
+- OAuth (GitHub, Google)
+- Multi-team support
+- Role-based access control
+- RBAC with 23 granular permissions
+
+### Security & Compliance
+- Row-level security (RLS)
+- Audit logging on all operations
+- GDPR-ready data handling
+- Enterprise SLA support
+
+## Architecture
+
+```
+Frontend: React + Vite + TypeScript
+UI Framework: shadcn/ui + Tailwind CSS
+Backend: Supabase + PostgreSQL
+Auth: Supabase Auth + Custom session management
+State: React Context + TanStack Query
+```
+
+## Authentication Documentation
+
+The authentication system includes:
+- 7 database tables with RLS policies
+- 7 services (auth, profile, team, invitation, audit, permission, role)
+- 4 custom React hooks
+- Complete RBAC implementation
+
+See [QUICK_START.md](./QUICK_START.md) for usage examples.
+
+## How can I edit this code?
 
 ### Authentication
 - Email/password sign up and sign in
@@ -52,153 +113,59 @@ Start with these files for different needs:
 - Magic link (passwordless) authentication
 - Password reset and update flows
 - Session management with auto-refresh
+- Multi-team support
+- Role-based access control
 
 ### Team Management
 - Create and manage teams
 - Switch between multiple teams
 - Team metadata (name, slug, description)
-- Soft-delete support for compliance
+- Invite members via email
+- Role-based permissions
 
-### Member Management
-- Invite team members via email
-- Accept/decline invitations
-- Role-based access control (owner, admin, member, guest)
-- Member permission tracking
-- Remove members from teams
+### Dashboard
+- Email validation statistics
+- API usage tracking
+- Subscription management
+- API key generation and management
+- Usage analytics
 
-### Profile Management
-- Create and update user profiles
-- Username availability checking
-- User search functionality
-- Profile activation/deactivation
-
-### Audit & Compliance
-- Log all user actions with timestamps
-- Track IP address and user agent
-- Store change deltas (before/after state)
-- Query audit trail by team, user, or action type
-- Compliance-ready audit system
-
-### Permission Management & RBAC (Phase 3)
-- 23 granular permissions across 7 categories
-- 4-level role hierarchy: Owner > Admin > Member > Guest
-- Role-based access control (RBAC) at all levels
-- Permission validation on all operations
-- Database-enforced access via RLS policies
-- Complete role and permission management UI
-- Team composition analysis and statistics
-- Audit trail for all permission changes
-
-## Project Structure
-
-```
-src/
-├── services/           # Business logic services
-│   ├── authService.ts
-│   ├── teamService.ts
-│   ├── invitationService.ts
-│   ├── profileService.ts
-│   └── auditService.ts
-├── components/
-│   ├── auth/          # Authentication components
-│   │   ├── ProfileSettings.tsx
-│   │   ├── CreateTeam.tsx
-│   │   ├── TeamInvitations.tsx
-│   │   └── TeamMembers.tsx
-│   ├── permissions/   # Permission & Role components (Phase 3)
-│   │   ├── RoleSelector.tsx
-│   │   ├── PermissionPanel.tsx
-│   │   ├── TeamMemberRoleManager.tsx
-│   │   └── PermissionsSummary.tsx
-│   ├── dashboard/     # Dashboard components
-│   └── ui/            # Shared UI components
-├── contexts/
-│   └── AuthContext.tsx # Global auth state
-├── pages/
-│   ├── TeamSettings.tsx
-│   ├── RolePermissionSettings.tsx  # Phase 3 - Permission management
-│   └── (other pages)
-├── hooks/             # Custom React hooks
-├── integrations/
-│   └── supabase/      # Supabase client & types
-└── (other directories)
-
-supabase/
-├── migrations/        # Database migrations
-│   ├── 20260220_000_create_base_functions.sql
-│   ├── 20260220_001_create_profiles.sql
-│   ├── 20260220_002_create_teams.sql
-│   ├── 20260220_003_create_team_members.sql
-│   ├── 20260220_004_create_team_invitations.sql
-│   ├── 20260220_005_create_audit_logs.sql
-│   └── 20260221_006_create_permissions.sql (Phase 3 - RBAC)
-└── functions/         # Edge functions
-```
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Security & Compliance
+- Row-level security (RLS) on all tables
+- Complete audit logging
+- GDPR-ready data handling
+- Enterprise encryption
+- Rate limiting
 
 ## What technologies are used for this project?
 
 This project is built with:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- **Frontend**: Vite + React + TypeScript
+- **UI**: shadcn/ui + Tailwind CSS
+- **Backend**: Supabase + PostgreSQL
+- **Auth**: Supabase Auth + Custom Auth Context
+- **State Management**: React Context + TanStack Query
+- **Animations**: Framer Motion
+- **Icons**: Lucide React
 
 ## How can I deploy this project?
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+1. **Push to GitHub**: All changes are automatically synced
+2. **Deploy to Vercel**: Click "Publish" in the project settings
+3. **Custom Domain**: Go to Project > Settings > Domains
 
-## Can I connect a custom domain to my Lovable project?
+## Documentation Files
 
-Yes, you can!
+- **QUICK_START.md** - Getting started guide
+- **ARCHITECTURE.md** - System design overview
+- **PHASE_1_2_IMPLEMENTATION.md** - Auth system details
+- **PHASE_3_IMPLEMENTATION.md** - RBAC system details
+- **AUDIT_REPORT.md** - Complete system audit
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Support
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+For issues or questions:
+- Check existing documentation
+- Review code comments
+- Contact development team

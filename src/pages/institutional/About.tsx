@@ -1,3 +1,0 @@
-import InstitutionalPage from "./InstitutionalPage";
-const About = () => <InstitutionalPage category="Company" title="About Xpex Systems AI" headline="Building Infrastructure for Modern Data Systems" content={["Xpex Systems AI is a technology company focused on scalable validation and automation infrastructure.","We develop performance-driven systems designed to support modern SaaS, marketing, and enterprise environments.","Our approach prioritizes reliability, security, and clean architectural standards.","The company operates with a long-term infrastructure mindset rather than short-term growth tactics."]} />;
-export default About;
